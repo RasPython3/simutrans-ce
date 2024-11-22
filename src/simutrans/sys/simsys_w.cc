@@ -22,7 +22,7 @@
 
 #include <string>
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32CE__)
 extern int __argc;
 extern char **__argv;
 #endif
@@ -171,7 +171,9 @@ static void create_window(DWORD const ex_style, DWORD const style, int const x, 
 	SetTimer( hwnd, 0, 1111, NULL ); // HACK: so windows thinks we are not dead when processing a timer every 1111 ms ...
 }
 
+#ifndef _WIN32_WCE
 static DEVMODE settings;
+#endif
 
 
 // open the window
@@ -185,10 +187,13 @@ int dr_os_open(const scr_size window_size, sint16 fs)
 	InitializeCriticalSection( &redraw_underway );
 	hFlushThread = CreateThread( NULL, 0, dr_flush_screen, 0, CREATE_SUSPENDED, NULL );
 #endif
+#ifndef _WIN32_WCE
 	MEMZERO(settings);
+#endif
 
 	// fake fullscreen
 	if (fullscreen) {
+#ifndef _WIN32_WCE
 		// try to force display mode and size
 		settings.dmSize = sizeof(settings);
 		settings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
@@ -211,6 +216,9 @@ int dr_os_open(const scr_size window_size, sint16 fs)
 		else {
 			ChangeDisplaySettings(&settings, CDS_FULLSCREEN);
 		}
+#else
+		fullscreen = WINDOWED;
+#endif
 	}
 	if(  fullscreen  ) {
 		create_window(WS_EX_TOPMOST, WS_POPUP, 0, 0, MaxSize.right, MaxSize.bottom);
@@ -270,9 +278,11 @@ void dr_os_close()
 	AllDibData = NULL;
 	free(AllDib);
 	AllDib = NULL;
+#ifndef _WIN32_WCE
 	if(  fullscreen == FULLSCREEN ) {
 		ChangeDisplaySettings(NULL, 0);
 	}
+#endif
 }
 
 
@@ -406,7 +416,11 @@ void dr_textur(int xp, int yp, int w, int h)
 		w = min( xp+w, AllDib->bmiHeader.biWidth ) - xp;
 		h = min( yp+h, AllDib->bmiHeader.biHeight ) - yp;
 		if(  h>1  &&  w>0  ) {
+#ifndef _WIN32_WCE
 			SetStretchBltMode( hdc, HALFTONE );
+#else
+			// SetStretchBltMode( hdc, BILINEAR ); FIXME: cannot found in libcoredll(?:6?).a!!!
+#endif
 			SetBrushOrgEx( hdc, 0, 0, NULL );
 			StretchDIBits(hdc, xscr, yscr, (w*x_scale)/32, (h*y_scale)/32, xp, yp+h+1, w, -h, AllDibData, AllDib, DIB_RGB_COLORS, SRCCOPY);
 		}
@@ -522,9 +536,11 @@ LRESULT WINAPI WindowProc(HWND this_hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 					// no updating while deleting a window please ...
 					EnterCriticalSection( &redraw_underway );
 #endif
+#ifndef _WIN32_WCE
 					// try to force display mode and size
 					// should be always successful, since it worked as least once ...
 					ChangeDisplaySettings(&settings, CDS_FULLSCREEN);
+#endif
 					is_not_top = false;
 
 					// must reshow window, otherwise startbar will be topmost ...
@@ -537,9 +553,13 @@ LRESULT WINAPI WindowProc(HWND this_hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 					return true;
 				}
 				else if(LOWORD(wParam)==WA_INACTIVE  &&  !is_not_top) {
+#ifndef _WIN32_WCE
 					// restore default
 					CloseWindow( hwnd );
 					ChangeDisplaySettings( NULL, 0 );
+#else
+					ShowWindow( hwnd, SW_MINIMIZE ); // FIXME: does this work well??
+#endif
 					is_not_top = true;
 				}
 
@@ -570,12 +590,16 @@ LRESULT WINAPI WindowProc(HWND this_hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			break;
 
 		case WM_MBUTTONDOWN: /* because capture or release may not start with the expected button */
+#ifdef WM_XBUTTONDOWN
 		case WM_XBUTTONDOWN:
+#endif
 			SetCapture(this_hwnd);
 			break;
 
 		case WM_MBUTTONUP: /* because capture or release may not start with the expected button */
+#ifdef WM_XBUTTONUP
 		case WM_XBUTTONUP:
+#endif
 			ReleaseCapture();
 			break;
 
@@ -730,6 +754,7 @@ LRESULT WINAPI WindowProc(HWND this_hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		case WM_IME_STARTCOMPOSITION:
 			break;
 
+#ifdef WM_IME_REQUEST
 		case WM_IME_REQUEST:
 			if(  wParam == IMR_QUERYCHARPOSITION  ) {
 				if(  gui_component_t *c = win_get_focus()  ) {
@@ -764,6 +789,7 @@ LRESULT WINAPI WindowProc(HWND this_hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 				break;
 			}
 			return DefWindowProcW( this_hwnd, msg, wParam, lParam );
+#endif
 
 		case WM_IME_COMPOSITION: {
 			HIMC immcx = 0;
@@ -1030,11 +1056,19 @@ int main()
 const char* dr_get_locale()
 {
 	static char LanguageCode[5]="";
+#ifndef _WIN32_WCE
 	GetLocaleInfoA( GetUserDefaultUILanguage(), LOCALE_SISO639LANGNAME, LanguageCode, lengthof( LanguageCode ) );
+#else
+	strcat(LanguageCode, "C");
+#endif
 	return LanguageCode;
 }
 
+#ifndef _WIN32_WCE
 int CALLBACK WinMain(HINSTANCE const hInstance, HINSTANCE, LPSTR, int)
+#else
+int CALLBACK WinMain(HINSTANCE const hInstance, HINSTANCE, LPTSTR, int)
+#endif
 {
 	WNDCLASSW wc;
 	bool timer_is_set = false;
@@ -1062,8 +1096,54 @@ int CALLBACK WinMain(HINSTANCE const hInstance, HINSTANCE, LPSTR, int)
 			timer_is_set = true;
 		}
 	}
-
+#ifndef _WIN32_WCE
 	int const res = sysmain(__argc, __argv);
+#else
+	int i;
+	int res = 0;
+
+	/* Prepare argc and argv by itself, not using __argc nor __argv */
+	int argc;
+	wchar_t **wargv;
+	char **argv = NULL;
+
+	wargv = CommandLineToArgvW(GetCommandLine(), &argc);
+	if (wargv != NULL) {
+		argv = (char **)calloc(argc, sizeof(char *));
+		if (argv == NULL) {
+			// no memory
+			res = -1;
+		}
+	} else {
+		// no memory
+		res = -1;
+	}
+	if (res == 0) {
+		for (i = 0; i < argc; i++) {
+			int len = WideCharToMultiByte(CP_UTF8, 0, *(wargv+i), -1, NULL, 0, NULL, NULL);
+			*(argv+i) = (char *)calloc(len, sizeof(char));
+			if (*(argv+i) == NULL) {
+				// no memory
+				res = -1;
+				break;
+			}
+			WideCharToMultiByte(CP_UTF8, 0, *(wargv+i), -1, *(argv+i), len, NULL, NULL);
+			free(*(wargv+i));
+		}
+	}
+
+	if (res == 0) {
+		free(wargv);
+		res = sysmain(argc, argv);
+	}
+
+	for (i = 0; i < argc; i++) {
+		free(*(argv+i));
+		free(*(wargv+i));
+	}
+	free(argv);
+	free(wargv);
+#endif
 	if(  timer_is_set  ) {
 		timeEndPeriod(1);
 	}

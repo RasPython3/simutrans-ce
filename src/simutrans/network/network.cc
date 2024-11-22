@@ -13,7 +13,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#ifndef _WIN32_WCE
 #include <errno.h>
+#else
+#include "../../WinCE/compatibility.h"
+#endif
 
 #include <string>
 

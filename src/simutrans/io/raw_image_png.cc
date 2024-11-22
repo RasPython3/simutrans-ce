@@ -9,8 +9,12 @@
 #include <png.h>
 #include <setjmp.h>
 #include <stdlib.h>
+#ifndef _WIN32_WCE
 #include <errno.h>
 #include <string.h> // strerror
+#else
+#include "../../WinCE/compatibility.h"
+#endif
 
 #include "../simmem.h"
 #include "../simdebug.h"

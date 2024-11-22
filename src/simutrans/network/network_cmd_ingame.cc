@@ -28,6 +28,10 @@
 #include "../display/viewport.h"
 #include "../script/script.h" // callback for calls to tools
 
+#ifdef _WIN32_WCE
+#define rewind(fp) SetFilePointer(fp, 0, NULL, FILE_BEGIN)
+#endif
+
 
 network_command_t* network_command_t::read_from_packet(packet_t *p)
 {

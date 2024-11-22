@@ -11,6 +11,9 @@
 #include "sound.h"
 #include "../sys/simsys.h"
 
+#ifdef _WIN32_WCE
+#define rewind(fp) SetFilePointer(fp, 0, NULL, FILE_BEGIN)
+#endif
 
 /*
  * flag if sound module should be used

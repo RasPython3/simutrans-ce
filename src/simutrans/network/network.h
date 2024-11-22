@@ -28,7 +28,9 @@
 #		define USE_IP4_ONLY
 #	endif
 #	define GET_LAST_ERROR() WSAGetLastError()
-#	include <errno.h>
+#	ifndef _WIN32_WCE
+#		include <errno.h>
+#	endif
 #	undef  EINPROGRESS
 #	define EINPROGRESS WSAEWOULDBLOCK
 #else

@@ -35,7 +35,9 @@ zlib_file_rdwr_stream_t::zlib_file_rdwr_stream_t(const std::string &filename, bo
 		set_status_from_errno();
 	}
 	else {
+#ifdef gzbuffer
 		gzbuffer(gzfp, 65536);
+#endif
 		status = STATUS_OK;
 	}
 }
