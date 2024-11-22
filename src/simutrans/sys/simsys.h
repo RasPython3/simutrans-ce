@@ -18,7 +18,7 @@
 #include <cstddef>
 
 // Provide chdir().
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32) && !defined(__CYGWIN__) && !defined(_WIN32_WCE)
 #	include <direct.h>
 #else
 #	include <unistd.h>

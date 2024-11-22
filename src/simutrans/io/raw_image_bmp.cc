@@ -54,6 +54,12 @@ struct bitmap_info_header_t
 #pragma pack(pop)
 #endif
 
+#ifdef _WIN32_WCE
+// BI_RGB, BI_RLE8 and BI_RLE4 are already defined at windows.h
+#undef BI_RGB
+#undef BI_RLE8
+#undef BI_RLE4
+#endif
 
 enum compression_method_t
 {

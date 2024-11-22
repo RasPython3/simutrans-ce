@@ -204,8 +204,10 @@ bool pak_download(vector_tpl<paksetinfo_t*>paks)
 		if (strncmp(pi->url, "https://", 6) == 0) {
 #ifdef _WIN32
 #ifndef USE_URLMON
+#ifndef _WIN32_WCE
 			sprintf(outfilename, "powershell \"(New-Object System.Net.WebClient).DownloadFile('%s', 'temp.zip')\"", pi->url);
 			system(outfilename);
+#endif
 #else
 			// use
 			if (URLDownloadToFile(NULL, pi->url, "temp.zip", 0, NULL) != 0) {

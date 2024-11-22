@@ -9,14 +9,18 @@
  */
 #define __STDC_WANT_LIB_EXT1__ 1
 
+#ifndef _WIN32_WCE
 #include <errno.h>
+#endif
 #include <sys/stat.h>
 #include <time.h>
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(_MSC_VER) ||              \
     defined(__MINGW32__)
+#ifndef __MINGW32CE__
 /* Win32, DOS, MSVC, MSVS */
 #include <direct.h>
+#endif
 
 #define STRCLONE(STR) ((STR) ? _strdup(STR) : NULL)
 #define HAS_DEVICE(P)                                                          \
@@ -203,11 +207,31 @@ static int zip_mkpath(char *path) {
       }
 #endif
 
+#ifndef _WIN32_WCE
       if (MZ_MKDIR(npath) == -1) {
         if (errno != EEXIST) {
           return ZIP_EMKDIR;
         }
       }
+#else
+      wchar_t *nwpath;
+      size_t fname_len = MultiByteToWideChar(CP_UTF8, 0, npath, -1, NULL, 0);
+      nwpath = (wchar_t *)calloc(fname_len, sizeof(wchar_t));
+      if (nwpath != NULL) {
+        MultiByteToWideChar(CP_UTF8, 0, npath, -1, nwpath, fname_len);
+        if (CreateDirectory(nwpath, NULL) != 0) {
+          free(nwpath);
+          if (GetLastError() == ERROR_FILE_EXISTS) {
+            return ZIP_EMKDIR;
+          }
+        } else {
+          free(nwpath);
+        }
+      } else {
+        free(nwpath);
+        return ZIP_EMKDIR;
+      }
+#endif
     }
     npath[len++] = *p;
   }

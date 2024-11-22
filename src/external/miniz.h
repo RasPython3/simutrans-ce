@@ -5030,7 +5030,7 @@ static int mz_mkdir(const char *pDirname) {
 #define MZ_DELETE_FILE remove
 #define MZ_MKDIR(d) mz_mkdir(d)
 
-#elif defined(__MINGW32__) || defined(__WATCOMC__)
+#elif defined(__MINGW32__) && !defined(__MINGW32CE__) || defined(__WATCOMC__)
 #ifndef MINIZ_NO_TIME
 #include <sys/utime.h>
 #endif
@@ -5112,7 +5112,7 @@ static int mz_mkdir(const char *pDirname) {
 #define MZ_FCLOSE fclose
 #define MZ_FREAD fread
 #define MZ_FWRITE fwrite
-#ifdef __STRICT_ANSI__
+#if defined(__STRICT_ANSI__) || defined(_WIN32_WCE)
 #define MZ_FTELL64 ftell
 #define MZ_FSEEK64 fseek
 #else
@@ -5123,8 +5123,12 @@ static int mz_mkdir(const char *pDirname) {
 #define MZ_FILE_STAT stat
 #define MZ_FFLUSH fflush
 #define MZ_FREOPEN(f, m, s) freopen(f, m, s)
+#ifndef _WIN32_WCE
 #define MZ_DELETE_FILE remove
 #define MZ_MKDIR(d) mkdir(d, 0755)
+#else
+// handle specially
+#endif
 #endif /* #ifdef _MSC_VER */
 #endif /* #ifdef MINIZ_NO_STDIO */
 
@@ -9965,8 +9969,19 @@ mz_bool mz_zip_add_mem_to_archive_file_in_place_v2(
 
   if ((!status) && (created_new_archive)) {
     /* It's a new archive and something went wrong, so just delete it. */
+#ifndef _WIN32_WCE
     int ignoredStatus = MZ_DELETE_FILE(pZip_filename);
     (void)ignoredStatus;
+#else
+    wchar_t *pwZip_filename;
+    size_t fname_len = MultiByteToWideChar(CP_UTF8, 0, pZip_filename, -1, NULL, 0);
+    pwZip_filename = (wchar_t *)calloc(fname_len, sizeof(wchar_t));
+    if (pwZip_filename != NULL) {
+      MultiByteToWideChar(CP_UTF8, 0, pZip_filename, -1, pwZip_filename, fname_len);
+      DeleteFileW(pwZip_filename);
+    }
+    free(pwZip_filename);
+#endif
   }
 
   if (pErr)

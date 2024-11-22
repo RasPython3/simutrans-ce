@@ -8,7 +8,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#ifndef _WIN32_WCE
 #include <errno.h>
+#endif
 
 #include "../sys/simsys.h"
 #include "../simtypes.h"

@@ -13,7 +13,9 @@
 #include "../simversion.h"
 #include "../dataobj/environment.h"
 
+#ifndef _WIN32_WCE
 #include <sys/stat.h>
+#endif
 
 
 stringhashtable_tpl<sve_info_t *> sve_cache_t::cached_info;

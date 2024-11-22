@@ -9,7 +9,12 @@
 #include "../sys/simsys.h"
 
 #include <string.h>
+#ifndef _WIN32_WCE
 #include <errno.h>
+#else
+#include "../../WinCE/compatibility.h"
+#define rewind(fp) SetFilePointer(fp, 0, NULL, FILE_BEGIN)
+#endif
 #include "../utils/cbuffer.h"
 
 #ifndef NETTOOL

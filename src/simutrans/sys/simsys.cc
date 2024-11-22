@@ -3,11 +3,18 @@
  * (see LICENSE.txt)
  */
 
+#ifdef _WIN32_WCE
+/* Avoid _STAT_DEFINED being defined before including following header: */
+#include "../../WinCE/compatibility.h"
+#endif
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
+#ifndef _WIN32_WCE
+#include <sys/types.h>
+#endif
 #include <sys/types.h>
 
 #ifdef __HAIKU__
@@ -37,10 +44,12 @@
 #	include <winbase.h>
 #	include <shellapi.h>
 #	include <shlobj.h>
-#	if !defined(__CYGWIN__)
+#	if !defined(__CYGWIN__) && !defined(_WIN32_WCE)
 #		include <direct.h>
-#	else
+#	elif !defined(_WIN32_WCE)
 #		include <sys\unistd.h>
+#	else
+#		include <unistd.h>
 #	endif
 #	include "../simdebug.h"
 #else
@@ -52,6 +61,10 @@
 #	ifdef __ANDROID__
 #		include <SDL.h>
 #	endif
+#endif
+
+#ifdef _WIN32_WCE
+#define GetWindowsDirectoryA(buf, size) strncpy(buf, "\\Windows", size)
 #endif
 
 #ifdef USE_FONTCONFIG
@@ -187,7 +200,11 @@ int dr_mkdir(char const* const path)
 		new_dir_with_path = abs_buf;
 	}
 
+#ifndef _WIN32_WCE
 	int result = SHCreateDirectory(NULL, U16View(new_dir_with_path)) ? 0 : -1;
+#else
+	int result = CreateDirectory(U16View(new_dir_with_path), NULL) ? 0 : -1;
+#endif
 
 	// Translate error.
 	if (result != ERROR_SUCCESS) {
@@ -248,7 +265,11 @@ bool dr_movetotrash(const char *path)
 	FileOp.fFlags = FOF_ALLOWUNDO|FOF_NOCONFIRMATION;
 
 	// Perform operation.
+#ifndef _WIN32_WCE
 	int success = SHFileOperationW(&FileOp);
+#else
+	int success = SHFileOperation(&FileOp);
+#endif
 
 	delete[] full_wpath;
 
@@ -301,7 +322,11 @@ int dr_rename(const char *existing_utf8, const char *new_utf8)
 {
 #ifdef _WIN32
 	// Perform operation.
+#ifndef _WIN32_WCE
 	bool success = MoveFileExW(U16View(existing_utf8), U16View(new_utf8), MOVEFILE_REPLACE_EXISTING);
+#else
+	bool success = MoveFileW(U16View(existing_utf8), U16View(new_utf8));
+#endif
 
 	// Translate error.
 	if(!success) {
@@ -380,7 +405,7 @@ FILE *dr_fopen (const char *filename, const char *mode)
 
 gzFile dr_gzopen(const char *path, const char *mode)
 {
-#ifdef _WIN32
+#if defined(_WIN32) && defined(gzopen_w)
 	return gzopen_w(U16View(path), mode);
 #else
 	return gzopen(path, mode);
@@ -504,7 +529,7 @@ char const *dr_query_homedir()
 {
 	static char buffer[PATH_MAX + 24];
 
-#if defined _WIN32
+#if defined(_WIN32) && !defined(_WIN32_WCE)
 	WCHAR whomedir[MAX_PATH];
 	if(FAILED(SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, whomedir))) {
 		DWORD len = sizeof(whomedir);
@@ -527,6 +552,30 @@ char const *dr_query_homedir()
 
 	// Append Simutrans folder.
 	char const foldername[] = "Simutrans";
+	if(lengthof(buffer) < strlen(buffer) + strlen(foldername) + 2 * strlen(PATH_SEPARATOR) + 1){
+		return NULL;
+	}
+	strcat(buffer, PATH_SEPARATOR);
+	strcat(buffer, foldername);
+#elif defined _WIN32_WCE
+	WCHAR whomedir[MAX_PATH];
+	GetModuleFileName(NULL, whomedir, MAX_PATH);
+	int index = wcslen(whomedir) - 1;
+	while (index >= 0) {
+		if (whomedir[index] == L'/' || whomedir[index] == L'\\') {
+			whomedir[index] = L'\0';
+			break;
+		}
+		index--;
+	}
+	// Convert UTF-16 to UTF-8.
+	int const convert_size = WideCharToMultiByte(CP_UTF8, 0, whomedir, -1, buffer, sizeof(buffer), NULL, NULL);
+	if(convert_size == 0) {
+		return NULL;
+	}
+
+	// Append Simutrans folder.
+	char const foldername[] = "simutrans";
 	if(lengthof(buffer) < strlen(buffer) + strlen(foldername) + 2 * strlen(PATH_SEPARATOR) + 1){
 		return NULL;
 	}
@@ -578,7 +627,7 @@ char const *dr_query_installdir()
 {
 	static char buffer[PATH_MAX + 24];
 
-#if defined _WIN32
+#if defined(_WIN32) && !defined(_WIN32_WCE)
 	WCHAR whomedir[MAX_PATH];
 	if(FAILED(SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA|CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, whomedir))) {
 		return NULL;
@@ -595,6 +644,33 @@ char const *dr_query_installdir()
 	if(lengthof(buffer) < strlen(buffer) + strlen(foldername) + 2 * strlen(PATH_SEPARATOR) + 1){
 		return NULL;
 	}
+	strcat(buffer, PATH_SEPARATOR);
+	strcat(buffer, foldername);
+#elif defined _WIN32_WCE
+	WCHAR whomedir[MAX_PATH];
+	GetModuleFileName(NULL, whomedir, MAX_PATH);
+	int index = wcslen(whomedir) - 1;
+	while (index >= 0) {
+		if (whomedir[index] == L'/' || whomedir[index] == L'\\') {
+			whomedir[index] = L'\0';
+			break;
+		}
+		index--;
+	}
+	// Convert UTF-16 to UTF-8.
+	int const convert_size = WideCharToMultiByte(CP_UTF8, 0, whomedir, -1, buffer, sizeof(buffer), NULL, NULL);
+	if(convert_size == 0) {
+		return NULL;
+	}
+
+	// Append Simutrans folder.
+	char const parentname[] = "simutrans";
+	char const foldername[] = "paksets";
+	if(lengthof(buffer) < strlen(buffer) + strlen(parentname) + strlen(foldername) + 3 * strlen(PATH_SEPARATOR) + 1){
+		return NULL;
+	}
+	strcat(buffer, PATH_SEPARATOR);
+	strcat(buffer, parentname);
 	strcat(buffer, PATH_SEPARATOR);
 	strcat(buffer, foldername);
 #elif defined __APPLE__
@@ -804,7 +880,7 @@ std::string dr_get_system_font()
 /* this retrieves the 2 byte string for the default language
  * I hope AmigaOS uses something like Linux for this ...
  */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_WIN32_WCE)
 
 struct id2str_t { uint16 id; const char *name; };
 
@@ -1285,7 +1361,9 @@ const char *dr_get_locale_string()
 	return code[0] ? code : NULL;
 }
 #else
+#ifndef _WIN32_WCE
 #include <locale.h>
+#endif
 
 const char *dr_get_locale_string()
 {
@@ -1309,7 +1387,12 @@ void dr_fatal_notify(char const* const msg)
 	fprintf(stderr, "dr_fatal_notify: ERROR: %s\n", msg);
 
 #ifdef _WIN32
+#ifndef _WIN32_WCE
 	MessageBoxA(0, msg, "Fatal Error", MB_ICONEXCLAMATION);
+#else
+	OutputDebugStringW(U16View(msg));
+	MessageBox(0, U16View(msg), L"Fatal Error", MB_ICONEXCLAMATION);
+#endif
 #endif
 
 #ifdef __ANDROID__
@@ -1351,7 +1434,13 @@ bool dr_download_pakset( const char *data_dir, bool portable )
 	shExInfo.nShow = SW_SHOW;
 	shExInfo.hInstApp = 0;
 
-	if(  ShellExecuteExW(&shExInfo)  ) {
+	if(
+#ifndef _WIN32_WCE
+		ShellExecuteExW(&shExInfo)
+#else
+		ShellExecuteEx(&shExInfo)
+#endif
+		) {
 		WaitForSingleObject( shExInfo.hProcess, INFINITE );
 		CloseHandle( shExInfo.hProcess );
 	}

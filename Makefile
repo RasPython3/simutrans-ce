@@ -91,9 +91,16 @@ else ifeq ($(OSTYPE),mingw)
   ifeq ($(MINGW_PACKAGE_PREFIX),mingw-w64-i686)
     LDFLAGS   += -Wl,--large-address-aware
   endif
-  LDFLAGS   += -pthread
-  CFLAGS    += -Wno-deprecated-copy -DNOMINMAX -DWIN32_LEAN_AND_MEAN -DWINVER=0x0501 -D_WIN32_IE=0x0500
-  LIBS      += -lmingw32 -lgdi32 -lwinmm -lws2_32 -limm32
+  ifneq ($(MINGW_PACKAGE_PREFIX),arm-mingw32ce)
+    LDFLAGS   += -pthread
+    CFLAGS    += -Wno-deprecated-copy -DNOMINMAX -DWIN32_LEAN_AND_MEAN -DWINVER=0x0501 -D_WIN32_IE=0x0500
+    LIBS      += -lmingw32 -lgdi32 -lwinmm -lws2_32 -limm32
+  else
+    SOURCES   += src/WinCE/compatibility.c
+    #LDFLAGS   += -pthread
+    CFLAGS    += -Wno-deprecated-copy -DNOMINMAX -DWIN32_LEAN_AND_MEAN -march=armv5tej -mcpu=arm926ej-s -Wno-attributes -DWC_NO_BEST_FIT_CHARS -D_WIN32_WCE=0x0600 -D_MAX_PATH=260 -D_UNICODE -DUNICODE -fvisibility=hidden -fno-pic -fno-semantic-interposition -fno-strict-aliasing
+    LIBS      += -lcoredll -lcoredll6 -lws2 -lmmtimer -lceshell
+  endif
 
   # Disable the console on Windows unless WIN32_CONSOLE is set or graphics are disabled
   ifdef WIN32_CONSOLE
@@ -102,8 +109,10 @@ else ifeq ($(OSTYPE),mingw)
     endif
   else ifeq ($(BACKEND),posix)
     LDFLAGS += -mconsole
-  else
+  else ifneq ($(MINGW_PACKAGE_PREFIX),arm-mingw32ce)
     LDFLAGS += -mwindows
+  else
+    LDFLAGS += -mwin32
   endif
 else ifeq ($(OSTYPE),linux)
   ifeq ($(shell expr $(STATIC) \>= 1), 1)
@@ -135,7 +144,7 @@ ifdef OPTIMISE
     endif
   endif
 else
-  CFLAGS += -O1
+  CFLAGS += -O0 -g
 endif
 
 ifneq ($(LTO),)
@@ -286,8 +295,13 @@ ifneq ($(GIT_HASH),)
 endif
 
 
-CFLAGS   += -Wall -Wextra -Wcast-qual -Wpointer-arith -Wcast-align $(FLAGS)
-CCFLAGS  += -ansi -Wstrict-prototypes -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+ifneq ($(MINGW_PACKAGE_PREFIX),arm-mingw32ce)
+  CFLAGS   += -Wall -Wextra -Wcast-qual -Wpointer-arith -Wcast-align $(FLAGS)
+  CCFLAGS  += -ansi -Wstrict-prototypes -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+else
+  CFLAGS   += -Wall -Wextra -Wcast-qual -Wpointer-arith -Wcast-align $(FLAGS)
+  CCFLAGS  += -std=c99 -Wstrict-prototypes -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+endif
 
 
 # sources (in alphabetic order)
@@ -646,10 +660,18 @@ SOURCES += src/squirrel/squirrel/sqvm.cc
 
 ifeq ($(BACKEND),gdi)
   SOURCES += src/simutrans/sys/simsys_w.cc
-  SOURCES += src/simutrans/sound/win32_sound_xa.cc
-  LDFLAGS += -lxaudio2_8
+  ifneq ($(MINGW_PACKAGE_PREFIX),arm-mingw32ce)
+    SOURCES += src/simutrans/sound/win32_sound_xa.cc
+    LDFLAGS += -lxaudio2_8
+  else
+    SOURCES += src/simutrans/sound/win32_sound.cc
+  endif
   ifneq ($(shell expr $(USE_FLUIDSYNTH_MIDI) \>= 1), 1)
-    SOURCES += src/simutrans/music/w32_midi.cc
+    ifneq ($(MINGW_PACKAGE_PREFIX),arm-mingw32ce)
+      SOURCES += src/simutrans/music/w32_midi.cc
+    else
+      SOURCES += src/simutrans/music/no_midi.cc
+    endif
   endif
 endif
 

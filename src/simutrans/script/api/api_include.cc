@@ -3,7 +3,11 @@
  * (see LICENSE.txt)
  */
 
+#ifndef _WIN32_WCE
 #include <sys/stat.h>
+#else
+#include "../../../WinCE/compatibility.h"
+#endif
 
 #include "../api_function.h"
 #include "../../../squirrel/sqstdio.h" // for loadfile

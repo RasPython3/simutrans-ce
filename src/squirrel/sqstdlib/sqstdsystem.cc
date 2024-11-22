@@ -13,11 +13,20 @@
 #define scremove _wremove
 #define screname _wrename
 #else
+#ifndef _WIN32_WCE
 #define scgetenv getenv
 #define scsystem system
 #define scasctime asctime
 #define scremove remove
 #define screname rename
+#else
+#include "../../WinCE/compatibility.h"
+#define scgetenv(name) NULL
+#define scsystem(command) 0
+#define scasctime wince_asctime
+#define scremove DeleteFileA
+#define screname MoveFileA
+#endif
 #endif
 #ifdef IOS
 	#include <spawn.h>
