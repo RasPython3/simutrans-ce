@@ -2,6 +2,12 @@
 #ifndef _SQVM_H_
 #define _SQVM_H_
 
+#ifdef _WIN32_WCE
+#ifndef va_list
+#include <stdarg.h>
+#endif
+#endif
+
 #include "sqopcodes.h"
 #include "sqobject.h"
 #define MAX_NATIVE_CALLS 100

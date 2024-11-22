@@ -6,6 +6,9 @@
 #ifndef SIMTYPES_H
 #define SIMTYPES_H
 
+#ifdef _WIN32_WCE
+#	include "../WinCE/compatibility.h"
+#endif
 
 #include <limits.h>
 

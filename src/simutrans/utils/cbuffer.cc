@@ -6,7 +6,9 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
+#ifndef _WIN32_WCE
 #include <errno.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include "cbuffer.h"
