@@ -1073,6 +1073,7 @@ int CALLBACK WinMain(HINSTANCE const hInstance, HINSTANCE, LPTSTR, int)
 	WNDCLASSW wc;
 	bool timer_is_set = false;
 
+	OutputDebugStringW(L"point 1");
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc = WindowProc;
 	wc.cbClsExtra = 0;
@@ -1083,10 +1084,12 @@ int CALLBACK WinMain(HINSTANCE const hInstance, HINSTANCE, LPTSTR, int)
 	wc.hbrBackground = (HBRUSH) (COLOR_BACKGROUND + 1);
 	wc.lpszMenuName = NULL;
 	wc.lpszClassName = WINDOW_CLASS_NAME;
+	OutputDebugStringW(L"point 2");
 	RegisterClassW(&wc);
 
 	GetWindowRect(GetDesktopWindow(), &MaxSize);
 
+	OutputDebugStringW(L"point 3");
 	// maybe set timer to 1ms interval on Win2k upwards ...
 	{
 		OSVERSIONINFO osinfo;
@@ -1096,6 +1099,7 @@ int CALLBACK WinMain(HINSTANCE const hInstance, HINSTANCE, LPTSTR, int)
 			timer_is_set = true;
 		}
 	}
+	OutputDebugStringW(L"point 4");
 #ifndef _WIN32_WCE
 	int const res = sysmain(__argc, __argv);
 #else
