@@ -27,7 +27,12 @@ boden_t::boden_t(loadsave_t *file, koord pos ) : grund_t( koord3d(pos,0) )
 		sint16 id = file->rd_obj_id();
 		while(  id!=-1  ) {
 			if (id != (uint8)id) {
+#ifndef _WIN32_WCE
 				dbg->warning("boden_t::boden_t", "Invalid tree id %hd, using %hhu", id, (uint8)id);
+#else
+				// '%hhu' is not supported on WinCE
+				dbg->warning("boden_t::boden_t", "Invalid tree id %hd, using %u", id, (uint8)id);
+#endif
 			}
 
 			uint16 age;
@@ -60,7 +65,12 @@ boden_t::boden_t(loadsave_t *file, koord pos ) : grund_t( koord3d(pos,0) )
 				objlist.add( tree );
 			}
 			else {
+#ifndef _WIN32_WCE
 				dbg->warning( "boden_t::boden_t()", "Could not restore tree type %hhu at (%s)", (uint8)id, pos.get_str() );
+#else
+				// '%hhu' is not supported on WinCE
+				dbg->warning( "boden_t::boden_t()", "Could not restore tree type %u at (%s)", (uint8)id, pos.get_str() );
+#endif
 			}
 
 			// check for next tree

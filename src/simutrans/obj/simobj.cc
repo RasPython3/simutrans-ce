@@ -82,7 +82,12 @@ obj_t::~obj_t()
 		gr = welt->access(pos.get_2d())->get_boden_von_obj(this);
 		if(gr  &&  gr->obj_remove(this)) {
 			dbg->warning("obj_t::~obj_t()",
+#ifndef _WIN32_WCE
 				"Removed %p from (%hi,%hi,%hhi), but it should have been on (%hi,%hi,%hhi)",
+#else
+				// '%hhi' is not supported on WinCE
+				"Removed %p from (%hi,%hi,%i), but it should have been on (%hi,%hi,%i)",
+#endif
 				(void *)this,
 				gr->get_pos().x, gr->get_pos().y, gr->get_pos().z,
 				pos.x, pos.y, pos.z);
@@ -96,7 +101,12 @@ obj_t::~obj_t()
 				grund_t *gr = welt->access(k)->get_boden_von_obj(this);
 				if (gr && gr->obj_remove(this)) {
 					dbg->warning("obj_t::~obj_t()",
+#ifndef _WIN32_WCE
 						"Removed %p from (%hi,%hi,%hhi), but it should have been on (%hi,%hi,%hhi)",
+#else
+						// '%hhi' is not supported on WinCE
+						"Removed %p from (%hi,%hi,%i), but it should have been on (%hi,%hi,%i)",
+#endif
 						(void *)this,
 						gr->get_pos().x, gr->get_pos().y, gr->get_pos().z,
 						pos.x, pos.y, pos.z);
