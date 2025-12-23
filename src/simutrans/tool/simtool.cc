@@ -4895,10 +4895,20 @@ const building_desc_t *tool_build_station_t::get_desc( sint8 &rotation ) const
 		char *p = strrchr( building, ',' );
 		if(  p  ) {
 			*p++ = 0;
+#ifndef _WIN32_WCE
 			if (std::sscanf(p, "%hhd", &rotation) != 1 || rotation < -1 || rotation > 15) {
 				free(building);
 				return NULL;
 			}
+#else
+			// '%hhd' is not supported on WinCE
+			sint16 tmp_rotation;
+			if (std::sscanf(p, "%hd", &tmp_rotation) != 1 || tmp_rotation < -1 || tmp_rotation > 15) {
+				free(building);
+				return NULL;
+			}
+			rotation = (sint8)tmp_rotation;
+#endif
 		}
 		tdsc = hausbauer_t::find_tile(building, 0);
 		free( building );
@@ -8176,7 +8186,19 @@ bool tool_change_depot_t::init( player_t *player )
 	while(  *p  &&  *p<=' '  ) {
 		p++;
 	}
+#ifndef _WIN32_WCE
 	sscanf( p, "%c,%hi,%hi,%hhi,%hi", &tool, &pos2d.x, &pos2d.y, &z, &convoi_id );
+#else
+	// '%hhi' is not supported on WinCE
+	sint16 tmp_z;
+	sscanf( p, "%c,%hi,%hi,%hi,%hi", &tool, &pos2d.x, &pos2d.y, &tmp_z, &convoi_id );
+	if (tmp_z < -254) {
+		tmp_z = -254;
+	} else if (tmp_z > 255) {
+		tmp_z = 255;
+	}
+	z = (sint8)tmp_z;
+#endif
 
 	koord3d pos(pos2d, z);
 
@@ -8457,9 +8479,23 @@ bool tool_change_traffic_light_t::init( player_t *player )
 	koord pos2d;
 	sint8 z;
 	uint16 ns, ticks;
+#ifndef _WIN32_WCE
 	if(  5!=sscanf( default_param, "%hi,%hi,%hhi,%hu,%hu", &pos2d.x, &pos2d.y, &z, &ns, &ticks )  ) {
 		return false;
 	}
+#else
+	// '%hhi' is not supported on WinCE
+	sint16 tmp_z;
+	if(  5!=sscanf( default_param, "%hi,%hi,%hi,%hu,%hu", &pos2d.x, &pos2d.y, &tmp_z, &ns, &ticks )  ) {
+		return false;
+	}
+	if (tmp_z < -254) {
+		tmp_z = -254;
+	} else if (tmp_z > 255) {
+		tmp_z = 255;
+	}
+	z = (sint8)tmp_z;
+#endif
 	koord3d pos(pos2d, z);
 	if(  grund_t *gr = welt->lookup(pos)  ) {
 		if( roadsign_t *rs = gr->find<roadsign_t>()  ) {
@@ -8559,10 +8595,25 @@ bool tool_rename_t::init(player_t *player)
 		case 'f': {
 			koord pos2d;
 			sint8 z;
+#ifndef _WIN32_WCE
 			if(  3!=sscanf( p, "%hi,%hi,%hhi", &pos2d.x, &pos2d.y, &z )  ) {
 				dbg->error( "tool_rename_t::init", "no position given for marker/factory! (%s)", default_param );
 				return false;
 			}
+#else
+			// '%hhi' is not supported on WinCE
+			sint16 tmp_z;
+			if(  3!=sscanf( p, "%hi,%hi,%hi", &pos2d.x, &pos2d.y, &tmp_z )  ) {
+				dbg->error( "tool_rename_t::init", "no position given for marker/factory! (%s)", default_param );
+				return false;
+			}
+			if (tmp_z < -254) {
+				tmp_z = -254;
+			} else if (tmp_z > 255) {
+				tmp_z = 255;
+			}
+			z = (sint8)tmp_z;
+#endif
 			while(  *p>0  &&  *p++!=','  ) {
 			}
 			while(  *p>0  &&  *p++!=','  ) {

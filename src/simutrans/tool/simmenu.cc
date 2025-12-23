@@ -899,7 +899,12 @@ bool tool_t::read_menu(const std::string& menuconf_path)
 					}
 				}
 				else {
+#ifndef _WIN32_WCE
 					dbg->warning("tool_t::read_menu()", "When parsing menuconf.tab: General tool id is not valid (%hhu >= %i). Tool ignored.", toolnr, (int)GENERAL_TOOL_COUNT);
+#else
+					// '%hhu' is not supported on WinCE
+					dbg->warning("tool_t::read_menu()", "When parsing menuconf.tab: General tool id is not valid (%u >= %i). Tool ignored.", toolnr, (int)GENERAL_TOOL_COUNT);
+#endif
 				}
 			}
 			else if (char const* const c = strstart(toolname, "simple_tool[")) {
@@ -915,7 +920,12 @@ bool tool_t::read_menu(const std::string& menuconf_path)
 					}
 				}
 				else {
+#ifndef _WIN32_WCE
 					dbg->warning("tool_t::read_menu()", "When parsing menuconf.tab: Simple tool id is not valid (%hhu >= %i). Tool ignored.", toolnr, (int)SIMPLE_TOOL_COUNT);
+#else
+					// '%hhu' is not supported on WinCE
+					dbg->warning("tool_t::read_menu()", "When parsing menuconf.tab: Simple tool id is not valid (%u >= %i). Tool ignored.", toolnr, (int)SIMPLE_TOOL_COUNT);
+#endif
 				}
 			}
 			else if (char const* const c = strstart(toolname, "dialog_tool[")) {
@@ -931,7 +941,12 @@ bool tool_t::read_menu(const std::string& menuconf_path)
 					}
 				}
 				else {
+#ifndef _WIN32_WCE
 					dbg->warning("tool_t::read_menu()", "When parsing menuconf.tab: Dialog tool id is not valid (%hhu >= %i). Tool ignored.", toolnr, (int)DIALOGE_TOOL_COUNT);
+#else
+					// '%hhu' is not supported on WinCE
+					dbg->warning("tool_t::read_menu()", "When parsing menuconf.tab: Dialog tool id is not valid (%u >= %i). Tool ignored.", toolnr, (int)DIALOGE_TOOL_COUNT);
+#endif
 				}
 			}
 			else if (char const* const c = strstart(toolname, "toolbar[")) {
@@ -950,7 +965,12 @@ bool tool_t::read_menu(const std::string& menuconf_path)
 				if (toolbar_tool.get_count() == toolnr) {
 					if (param_str == NULL) {
 						param_str = "Unnamed toolbar";
+#ifndef _WIN32_WCE
 						dbg->warning("tool_t::read_menu()", "Missing title for toolbar[%hhu]", toolnr);
+#else
+						// '%hhu' is not supported on WinCE
+						dbg->warning("tool_t::read_menu()", "Missing title for toolbar[%u]", toolnr);
+#endif
 					}
 
 					char* c = strdup(param_str);

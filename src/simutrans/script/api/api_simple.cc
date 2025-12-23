@@ -132,7 +132,12 @@ SQInteger ribi_to_coord(HSQUIRRELVM vm)
 {
 	const uint8 ribi = param<uint8>::get(vm, 2);
 	if ((ribi & ~(uint8)ribi_t::all) != 0) {
+#ifndef _WIN32_WCE
 		return sq_raise_error(vm, "Invalid dir %hhu (valid values are 0..15)", ribi);
+#else
+		// '%hhu' is not supported on WinCE
+		return sq_raise_error(vm, "Invalid dir %hu (valid values are 0..15)", (uint16)ribi);
+#endif
 	}
 
 	koord k( (ribi_t::ribi)ribi );
