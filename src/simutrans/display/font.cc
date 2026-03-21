@@ -37,6 +37,9 @@ font_t::font_t() :
 	descent(0)
 {
 	fname[0] = 0;
+#ifdef _WIN32_WCE
+  wfname[0] = L'\0';
+#endif
 }
 
 #if 0
@@ -247,6 +250,7 @@ bool font_t::load_from_bdf(FILE *bdf_file)
 #define FT_Bitmap_Init FT_Bitmap_New
 #endif
 
+#ifndef _WIN32_WCE
 
 bool font_t::load_from_freetype(const char *fname, int pixel_height)
 {
@@ -426,6 +430,220 @@ bool font_t::load_from_freetype(const char *fname, int pixel_height)
 	return true;
 }
 
+#else
+
+static unsigned long _stream_iofunc(FT_Stream stream, unsigned long offset, unsigned char* buffer, unsigned long count)
+{
+  FILE *fp = (FILE *)( stream->descriptor.pointer );
+  fseek( fp, offset, SEEK_SET );
+  return fread( buffer, 1, count, fp );
+}
+
+static void _stream_closefunc(FT_Stream stream)
+{
+  FILE *fp = (FILE *)( stream->descriptor.pointer );
+  fclose( fp );
+}
+
+
+bool font_t::load_from_freetype_stream(FILE *fp, long size, int pixel_height)
+{
+	dbg->message( "font_t::load_from_freetype_stream", "trying to load from stream (%d bytes) in size %d", size, pixel_height);
+
+	FT_Library ft_library = NULL;
+	if(  FT_Init_FreeType(&ft_library) != FT_Err_Ok  ) {
+		dbg->error( "font_t::load_from_freetype_stream", "Freetype initialization failed" );
+		return false;
+	}
+
+	// now actually load it
+	FT_Face face;
+  FT_StreamRec rec = {
+    .base = NULL,
+    .size = size,
+    .pos = 0,
+    .descriptor = {.pointer = fp},
+    .pathname = {.pointer = NULL},
+    .read = _stream_iofunc,
+    .close = _stream_closefunc,
+    .memory = NULL
+  };
+  FT_Open_Args args = {
+    .flags = FT_OPEN_STREAM,
+    .memory_base = NULL,
+    .memory_size = 0,
+    .pathname = NULL,
+    .stream = &rec,
+    .driver = NULL,
+    .num_params = 0,
+    .params = NULL
+  };
+
+	if(  FT_Open_Face( ft_library, &args, 0, &face ) != FT_Err_Ok  ) {
+		dbg->warning( "font_t::load_from_freetype_stream", "Cannot load from memory" );
+		FT_Done_FreeType( ft_library );
+		return false;
+	}
+
+	if(  FT_Set_Pixel_Sizes( face, 0, pixel_height ) != FT_Err_Ok  ) {
+		dbg->warning( "font_t::load_from_freetype_stream", "Cannot set pixel size %d", pixel_height);
+
+		// try to find closest available pixel_height
+		int best = -1;
+		for (int i=0; i<face->num_fixed_sizes; i++) {
+			int h = (face->available_sizes[i].y_ppem + 32) >> 6;
+			if (best == -1  ||  abs(best - pixel_height) > abs(h - pixel_height)) {
+				best = h;
+			}
+		}
+
+		if (best == -1) {
+			// failed
+			FT_Done_Face(face);
+			FT_Done_FreeType(ft_library);
+			return false;
+		}
+		if(  FT_Set_Pixel_Sizes( face, 0, best) != FT_Err_Ok  ) {
+			dbg->warning( "font_t::load_from_freetype_stream", "Cannot set pixel size %d", best);
+		}
+		// continue anyway
+	}
+
+	glyphs.resize(0x10000);
+
+	ascent    = face->size->metrics.ascender/64;
+	linespace = face->size->metrics.height/64;
+	descent   = face->size->metrics.descender/64;
+
+	uint32 num_glyphs = 0;
+
+	// 8 bit bitmap
+	FT_Bitmap bitmap_8;
+	FT_Bitmap_Init(&bitmap_8);
+
+	for(  uint32 glyph_nr=0;  glyph_nr<0xFFFF;  glyph_nr++  ) {
+
+		if (glyph_nr > 0) {
+			uint32 c = FT_Get_Char_Index(face, glyph_nr);
+			if (c == 0) {
+				// glyph not in font => nothing to render
+				glyphs[glyph_nr].advance = 0xFF;
+				continue;
+			}
+		}
+
+		/* load glyph image into the slot (erase previous one) */
+		if(  FT_Load_Char( face, glyph_nr, FT_LOAD_RENDER) != FT_Err_Ok  ) {
+			// glyph not there ...
+			glyphs[glyph_nr].advance = 0xFF;
+			continue;
+		}
+
+		const FT_Error error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+		if(error != FT_Err_Ok) {
+			// glyph not there ...
+			glyphs[glyph_nr].advance = 0xFF;
+			continue;
+		}
+
+		// use only needed amount
+		num_glyphs = glyph_nr+1;
+
+		/* now render into cache
+		 * the bitmap is at slot->bitmap
+		 * the glyph base is at slot->bitmap_left, CELL_HEIGHT - slot->bitmap_top
+		 */
+
+		glyph_t & glyph = glyphs[glyph_nr];
+
+		FT_Bitmap *bitmap = &face->glyph->bitmap;
+		bool one_bit_pp = false;
+
+		// check bit depth, for some reason bdf fonts get bitmaps with 1 bit per pixel
+		if (face->glyph->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY) {
+			// need to convert
+			if (FT_Bitmap_Convert(ft_library, &face->glyph->bitmap, &bitmap_8, 4) != FT_Err_Ok) {
+				// should not happen
+				continue;
+			}
+			bitmap = &bitmap_8;
+			one_bit_pp = true;
+		}
+
+		// set glyph size
+		glyph.height  = bitmap->rows;
+		glyph.width   = bitmap->width;
+		glyph.advance = (face->glyph->advance.x + 31) / 64;
+
+		// the bitmaps are all top aligned. Bitmap top is the ascent
+		// above the base line
+		// to find the real top position, we must take the font ascent
+		// and reduce it by the glyph ascent
+		glyph.top = ascent - face->glyph->bitmap_top - 1;
+
+		glyph.left = face->glyph->bitmap_left;
+
+		// transform glyph to Simutrans bitmap
+		glyph.bitmap = (uint8*)calloc(glyph.height * glyph.width, 1);
+
+		if (!one_bit_pp) {
+			// 8 bit alpha per pixel
+			for(int y = 0; y < glyph.height; y++) {
+				for(int x = 0; x < glyph.width; x++) {
+					uint16 alpha = bitmap->buffer[y * bitmap->pitch + x];
+					// simgraph blend routines want alpha in 0..32
+					glyph.bitmap[y * glyph.width + x] = (alpha * 32) / 255;
+				}
+			}
+		}
+		else {
+			// 1 bit per pixel
+			for(int y = 0; y < glyph.height; y++) {
+				for(int x = 0; x < glyph.width; x++) {
+					uint16 alpha = bitmap->buffer[y * bitmap->pitch + x];
+					// simgraph blend routines want alpha in 0..32
+					glyph.bitmap[y * glyph.width + x] = (alpha * 32);
+				}
+			}
+		}
+
+		// find out if invalid character
+		if (glyph_nr  &&  glyph.height>0  &&  glyphs[0].height == glyph.height  &&  glyphs[0].width == glyph.width  &&  memcmp(glyphs[0].bitmap, glyph.bitmap, glyph.height * glyph.width) == 0) {
+			// same bitmap as character zero ?!?!
+			glyph.advance = 0xFF;
+		}
+
+	}
+
+	FT_Bitmap_Done(ft_library, &bitmap_8);
+
+	if(num_glyphs < 0x80) {
+		FT_Done_Face( face );
+		FT_Done_FreeType( ft_library );
+		return false;
+	}
+
+	// hack for not rendered full width space
+	if(  glyphs[0x3000].advance == 0xFF  &&  glyphs[0x3001].advance != 0xFF  ) {
+		glyphs[0x3000].advance = glyphs[0x3001].advance;
+		glyphs[0x3000].width = 0;
+		glyphs[0x3000].top = 0;
+	}
+
+	if (glyphs[' '].advance == 0xFF) {
+		glyphs[' '].advance = glyphs['n'].advance;
+	}
+
+	// Use only needed amount
+	glyphs.resize(num_glyphs);
+
+	FT_Done_Face( face );
+	FT_Done_FreeType( ft_library );
+	return true;
+}
+
+#endif
+
 #endif
 
 
@@ -458,10 +676,48 @@ void font_t::print_debug() const
 
 bool font_t::load_from_file(const char *srcfilename)
 {
+#ifndef _WIN32_WCE
 	tstrncpy( fname, srcfilename, lengthof(fname) );
+#else
+	wchar_t tmpPath[MAX_PATH];
+	if (*srcfilename != '/' && *srcfilename != '\\') {
+		GetCurrentDirectoryW( MAX_PATH, wfname );
+	} else {
+    wfname[0] = L'\0';
+  }
+
+  MultiByteToWideChar(CP_ACP, 0, srcfilename, -1, tmpPath, MAX_PATH);
+  wcsncat(wfname, tmpPath, MAX_PATH - wcslen(tmpPath));
+  WideCharToMultiByte(CP_ACP, 0, wfname, -1, fname, MAX_PATH, NULL, NULL);
+
+  dbg->message( "font_t::load_from_file", "trying to load %s", fname);
+#endif
 
 #if COLOUR_DEPTH != 0
+#ifndef _WIN32_WCE
 	bool ok = load_from_freetype( fname, env_t::fontsize );
+#else
+  FILE *fp = NULL;
+  long size = 0;
+  
+  if ((fp = _wfopen( wfname, L"r" )) != NULL) {
+    fseek( fp, 0, SEEK_END );
+    size = (long)ftell( fp );
+    fseek( fp, 0, SEEK_SET );
+  }
+
+	bool ok = fp != NULL && size > 0;
+  
+  if (  ok  ) {
+    ok = load_from_freetype_stream( fp, size, env_t::fontsize );
+  }
+
+  if (  ok  ) {
+	  tstrncpy( this->fname, fname, lengthof(this->fname) );
+  }
+
+  fclose(fp);
+#endif
 
 #if MSG_LEVEL>=4
 	if(  ok  ) {

@@ -375,6 +375,18 @@ wince_absolute_path_wide(const WCHAR *path, WCHAR *buffer, int buffer_size)
     wince_canonicalize_path(buffer);
 }
 
+/* Converts an ANSI relative path to a wide absolute path */
+void
+wince_absolute_path_to_wide(const char *path, WCHAR *buffer, int buffer_size)
+{
+    WCHAR wide_path[MAX_PATH + 1];
+
+    /* Convert path to wide */
+    MultiByteToWideChar(CP_ACP, 0, path, -1, wide_path, (sizeof(wide_path) / sizeof(wide_path[0])));
+    /* Get the absolute path */
+    wince_absolute_path_wide(wide_path, buffer, buffer_size);
+}
+
 #define FT_EPOCH (116444736000000000LL)
 #define FT_TICKS (10000000LL)
 
@@ -467,6 +479,80 @@ _wstat(const wchar_t *path, struct wince__stat *buffer)
     return 0;
 }
 
+/* Check an fopen()/_wfopen() mode string for validity */
+static int
+check_fopen_mode(const WCHAR *mode)
+{
+    /* Check each character in the mode string against the allowed characters */
+    while (*mode) {
+        switch (*mode++) {
+            /* These are the valid mode characters */
+            case L'r':
+            case L'w':
+            case L'a':
+            case L'+':
+            case L't':
+            case L'b':
+            case L'c':
+            case L'n':
+                break;
+            /* Everything else is invalid */
+            default:
+                return 0;
+        }
+    }
+    return 1;
+}
+
+/* Local version of fopen() that handles relative paths */
+#undef _wfopen
+FILE *
+wince_fopen(const char *filename, const char *Mode)
+{
+    FILE *fp;
+    WCHAR abs_path[MAX_PATH + 1];
+    WCHAR wmode[8];
+
+    /* Convert mode to wide string and check mode validity */
+#if 0
+    MultiByteToWideChar(CP_ACP, 0, Mode, -1, wmode, (sizeof(wmode) / sizeof(wmode[0])));
+#else
+    MultiByteToWideChar(CP_UTF8, 0, Mode, -1, wmode, (sizeof(wmode) / sizeof(wmode[0])));
+#endif
+    if (!check_fopen_mode(wmode)) {
+        /* Return an error that will provoke an "invalid mode" error */
+        errno = 0;
+        return 0;
+    }
+    /* Try to do the normal fopen() */
+    wince_absolute_path_to_wide(filename, abs_path, (sizeof(abs_path) / sizeof(abs_path[0])));
+    fp = _wfopen(abs_path, wmode);
+    if (!fp)
+        errno = ENOENT;
+    return fp;
+}
+
+/* Local version of _wfopen() that deals with relative paths */
+FILE *
+wince_wfopen(const WCHAR *filename, const WCHAR *Mode)
+{
+    FILE *fp;
+    WCHAR abs_path[MAX_PATH + 1];
+
+    /* Check mode validity */
+    if (!check_fopen_mode(Mode)) {
+        /* Return an error that will provoke an "invalid mode" error */
+        errno = 0;
+        return 0;
+    }
+    /* Call _wfopen with the absolute path */
+    wince_absolute_path_wide(filename, abs_path, sizeof(abs_path) / sizeof(abs_path[0]));
+    fp = _wfopen(abs_path, Mode);
+    if (!fp)
+        errno = ENOENT;
+    return fp;
+}
+
 DWORD
 GetCurrentDirectoryW(DWORD numbuf, wchar_t *buffer)
 {
@@ -551,6 +637,174 @@ clock(void)
 {
     /* Not supported */
     return (clock_t)-1;
+}
+
+
+static find_data_wide_to_ansi(WIN32_FIND_DATAA *data, const WIN32_FIND_DATAW *wdata)
+{
+    data->dwFileAttributes = wdata->dwFileAttributes;
+    data->ftCreationTime = wdata->ftCreationTime;
+    data->ftLastAccessTime = wdata->ftLastAccessTime;
+    data->ftLastWriteTime = wdata->ftLastWriteTime;
+    data->nFileSizeHigh = wdata->nFileSizeHigh;
+    data->nFileSizeLow = wdata->nFileSizeLow;
+    data->dwOID = wdata->dwOID;
+    // data->dwReserved0 = 0;
+    // data->dwReserved1 = 0;
+    WideCharToMultiByte(CP_ACP, 0, wdata->cFileName, -1, data->cFileName, sizeof(data->cFileName),
+                        NULL, NULL);
+    // data->cAlternateFileName[0] = '\0';
+}
+
+#undef FindFirstFileW
+HANDLE
+wince_FindFirstFileW(const wchar_t *filename, WIN32_FIND_DATAW *data)
+{
+    WCHAR absolute_path[MAX_PATH + 1];
+    wince_absolute_path_wide(filename, absolute_path, MAX_PATH + 1);
+    return FindFirstFileW(absolute_path, data);
+}
+
+HANDLE
+FindFirstFileA(const char *filename, WIN32_FIND_DATAA *data)
+{
+    WCHAR absolute_path[MAX_PATH + 1];
+    HANDLE handle;
+    WIN32_FIND_DATAW wdata;
+
+    /* Get the absolute path */
+    wince_absolute_path_to_wide(filename, absolute_path, MAX_PATH);
+
+    handle = wince_FindFirstFileW(absolute_path, &wdata);
+    if (handle != INVALID_HANDLE_VALUE)
+        find_data_wide_to_ansi(data, &wdata);
+    return handle;
+}
+
+BOOL
+FindNextFileA(HANDLE handle, WIN32_FIND_DATAA *data)
+{
+    WIN32_FIND_DATAW wdata;
+    BOOL ret;
+
+    ret = FindNextFileW(handle, &wdata);
+    if (ret)
+        find_data_wide_to_ansi(data, &wdata);
+    return ret;
+}
+
+#undef CreateFileW
+HANDLE
+wince_CreateFileW(const wchar_t *filename, DWORD dwDesiredAccess, DWORD dwShareMode,
+                  struct _SECURITY_ATTRIBUTES *lpSecurityAttributes, DWORD dwCreationDisposition,
+                  DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+{
+    WCHAR absolute_path[MAX_PATH + 1];
+    wince_absolute_path_wide(filename, absolute_path, MAX_PATH + 1);
+    dwFlagsAndAttributes &=
+        FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_HIDDEN |
+        FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM |
+        FILE_ATTRIBUTE_ROMMODULE | FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_WRITE_THROUGH |
+        FILE_FLAG_OVERLAPPED | FILE_FLAG_RANDOM_ACCESS;
+    if (dwDesiredAccess > 0 && dwDesiredAccess & (GENERIC_READ | GENERIC_WRITE) == 0) {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return INVALID_HANDLE_VALUE;
+    }
+    dwDesiredAccess &= GENERIC_READ | GENERIC_WRITE;
+    return CreateFileW(absolute_path, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
+                       dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+}
+
+HANDLE
+CreateFileA(const char *filename, DWORD dwDesiredAccess, DWORD dwShareMode,
+            struct _SECURITY_ATTRIBUTES *lpSecurityAttributes, DWORD dwCreationDisposition,
+            DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+{
+    WCHAR wfilename[MAX_PATH + 1];
+    MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename,
+                        sizeof(wfilename) / sizeof(wfilename[0]));
+    dwFlagsAndAttributes &=
+        FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_HIDDEN |
+        FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM |
+        FILE_ATTRIBUTE_ROMMODULE | FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_WRITE_THROUGH |
+        FILE_FLAG_OVERLAPPED | FILE_FLAG_RANDOM_ACCESS;
+    if (dwDesiredAccess > 0 && dwDesiredAccess & (GENERIC_READ | GENERIC_WRITE) > 0) {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return INVALID_HANDLE_VALUE;
+    }
+    dwDesiredAccess &= GENERIC_READ | GENERIC_WRITE;
+    return wince_CreateFileW(wfilename, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
+                             dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+}
+
+#undef GetFileAttributesW
+DWORD
+wince_GetFileAttributesW(const wchar_t *filename)
+{
+    WCHAR absolute_path[MAX_PATH + 1];
+    wince_absolute_path_wide(filename, absolute_path, MAX_PATH + 1);
+    return GetFileAttributesW(absolute_path);
+}
+
+DWORD
+GetFileAttributesA(const char *filename)
+{
+    WCHAR wfilename[MAX_PATH + 1];
+    MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename,
+                        sizeof(wfilename) / sizeof(wfilename[0]));
+    return wince_GetFileAttributesW(wfilename);
+}
+
+#undef SetFileAttributesW
+BOOL
+wince_SetFileAttributesW(const wchar_t *filename, DWORD attr)
+{
+    WCHAR absolute_path[MAX_PATH + 1];
+    wince_absolute_path_wide(filename, absolute_path, MAX_PATH + 1);
+    return SetFileAttributesW(absolute_path, attr);
+}
+
+BOOL
+SetFileAttributesA(const char *filename, DWORD attr)
+{
+    WCHAR wfilename[MAX_PATH + 1];
+    MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename,
+                        sizeof(wfilename) / sizeof(wfilename[0]));
+    return wince_SetFileAttributesW(wfilename, attr);
+}
+
+#undef CreateDirectoryW
+BOOL
+wince_CreateDirectoryW(const wchar_t *path, struct _SECURITY_ATTRIBUTES *security)
+{
+    WCHAR absolute_path[MAX_PATH + 1];
+    wince_absolute_path_wide(path, absolute_path, MAX_PATH + 1);
+    return CreateDirectoryW(absolute_path, security);
+}
+
+BOOL
+CreateDirectoryA(const char *path, struct _SECURITY_ATTRIBUTES *security)
+{
+    WCHAR wpath[MAX_PATH + 1];
+    MultiByteToWideChar(CP_ACP, 0, path, -1, wpath, sizeof(wpath) / sizeof(wpath[0]));
+    return wince_CreateDirectoryW(wpath, security);
+}
+
+#undef RemoveDirectoryW
+BOOL
+wince_RemoveDirectoryW(const wchar_t *path)
+{
+    WCHAR absolute_path[MAX_PATH + 1];
+    wince_absolute_path_wide(path, absolute_path, MAX_PATH + 1);
+    return RemoveDirectoryW(absolute_path);
+}
+
+BOOL
+RemoveDirectoryA(const char *path)
+{
+    WCHAR wpath[MAX_PATH + 1];
+    MultiByteToWideChar(CP_ACP, 0, path, -1, wpath, sizeof(wpath) / sizeof(wpath[0]));
+    return wince_RemoveDirectoryW(wpath);
 }
 
 #undef DeleteFileW

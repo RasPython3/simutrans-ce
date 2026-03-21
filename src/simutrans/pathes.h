@@ -20,17 +20,23 @@
  * \endparblock
  */
 
+#ifndef _WIN32_WCE
+#define _SEP "/"
+#else
+#define _SEP "\\"
+#endif
+
 #define USER_PAK_PATH      "simutrans"
-#define USER_PAK_PATH_X     USER_PAK_PATH "/"
+#define USER_PAK_PATH_X     USER_PAK_PATH _SEP
 
 #define FONT_PATH      "font"
-#define FONT_PATH_X     FONT_PATH "/"
+#define FONT_PATH_X     FONT_PATH _SEP
 
 #define SAVE_PATH       "save"
-#define SAVE_PATH_X     SAVE_PATH "/"
+#define SAVE_PATH_X     SAVE_PATH _SEP
 #define SAVE_PATH_X_LEN (sizeof(SAVE_PATH_X) - 1)
 
 #define SCREENSHOT_PATH     "screenshot"
-#define SCREENSHOT_PATH_X    SCREENSHOT_PATH "/"
+#define SCREENSHOT_PATH_X    SCREENSHOT_PATH _SEP
 
 #endif
