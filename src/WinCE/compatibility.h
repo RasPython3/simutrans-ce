@@ -11,6 +11,7 @@ extern "C" {
 
 #include <windows.h>
 #include <winerror.h>
+#include <stdio.h>
 
 #ifndef va_list
 #include <stdarg.h>
@@ -191,6 +192,11 @@ struct _stat {
 
 int _wstat(const wchar_t *, struct _stat *);
 
+FILE * wince_fopen(const char *filename, const char *mode);
+FILE * wince_wfopen(const wchar_t *filename, const wchar_t *mode);
+#define fopen wince_fopen
+#define _wfopen wince_wfopen
+
 DWORD GetCurrentDirectoryW(DWORD, wchar_t *);
 BOOL SetCurrentDirectoryW(const WCHAR *);
 DWORD GetFullPathNameW(const wchar_t *, DWORD, wchar_t *, wchar_t **);
@@ -222,6 +228,41 @@ char * wince_asctime(const struct tm *);
 typedef long time_t;
 #define _TIME_T_DEFINED
 #endif
+
+typedef struct _WIN32_FIND_DATAA WIN32_FIND_DATAA;
+typedef struct _WIN32_FIND_DATAW WIN32_FIND_DATAW;
+typedef void *HANDLE;
+
+HANDLE wince_FindFirstFileW(const wchar_t *filename, WIN32_FIND_DATAW *data);
+#define FindFirstFileW wince_FindFirstFileW
+HANDLE FindFirstFileA(const char *filename, WIN32_FIND_DATAA *data);
+
+int FindNextFileA(HANDLE handle, WIN32_FIND_DATAA *data);
+
+HANDLE wince_CreateFileW(const wchar_t *filename, DWORD dwDesiredAccess, DWORD dwShareMode,
+                         struct _SECURITY_ATTRIBUTES *lpSecurityAttributes,
+                         DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes,
+                         HANDLE hTemplateFile);
+#define CreateFileW wince_CreateFileW
+HANDLE CreateFileA(const char *filename, DWORD dwDesiredAccess, DWORD dwShareMode,
+                   struct _SECURITY_ATTRIBUTES *lpSecurityAttributes, DWORD dwCreationDisposition,
+                   DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+
+DWORD wince_GetFileAttributesW(const wchar_t *filename);
+#define GetFileAttributesW wince_GetFileAttributesW
+DWORD GetFileAttributesA(const char *filename);
+
+BOOL wince_SetFileAttributesW(const wchar_t *filename, DWORD attr);
+#define SetFileAttributesW wince_SetFileAttributesW
+BOOL SetFileAttributesA(const char *filename, DWORD attr);
+
+BOOL wince_CreateDirectoryW(const wchar_t *path, struct _SECURITY_ATTRIBUTES *security);
+#define CreateDirectoryW wince_CreateDirectoryW
+BOOL CreateDirectoryA(const char *path, struct _SECURITY_ATTRIBUTES *security);
+
+BOOL wince_RemoveDirectoryW(const wchar_t *path);
+#define RemoveDirectoryW wince_RemoveDirectoryW
+BOOL RemoveDirectoryA(const char *path);
 
 BOOL wince_DeleteFileW(const wchar_t *);
 BOOL DeleteFileA(const char *);

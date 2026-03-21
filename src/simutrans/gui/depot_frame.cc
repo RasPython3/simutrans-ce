@@ -7,6 +7,10 @@
  * The depot window, where to buy convois
  */
 
+#ifdef _WIN32_WCE
+#include "../../WinCE/compatibility.h"
+#endif
+
 #include <algorithm>
 #include <stdio.h>
 #include <string.h>

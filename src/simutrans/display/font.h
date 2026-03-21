@@ -65,7 +65,11 @@ public:
 private:
 #if COLOUR_DEPTH != 0
 	/// Load a freetype font
+#ifndef _WIN32_WCE
 	bool load_from_freetype(const char *fname, int pixel_height);
+#else
+	bool load_from_freetype_stream(FILE *fp, long size, int pixel_height);
+#endif
 #endif
 
 	void print_debug() const;
@@ -74,6 +78,9 @@ private:
 
 private:
 	char fname[PATH_MAX];
+#ifdef _WIN32_WCE
+  wchar_t wfname[PATH_MAX];
+#endif
 	sint16 linespace;
 	sint16 ascent;
 	sint16 descent;

@@ -130,38 +130,78 @@ void searchfolder_t::search_path(const std::string path, const std::string name,
 		return;
 	}
 
+#ifndef _WIN32_WCE
 	struct _wfinddata_t entry;
 	intptr_t const hfind = _wfindfirst(path_inW, &entry);
 	if(hfind == -1) {
 		// Search failed.
 		return;
 	}
+#else
+	WIN32_FIND_DATAW entry;
+	HANDLE const hfind = FindFirstFileW(path_inW, &entry);
+	if(hfind == INVALID_HANDLE_VALUE) {
+		// Search failed.
+		return;
+	}
+#endif
 
 	lookfor = name + ext;
 	do {
 		// Convert entry name.
+#ifndef _WIN32_WCE
 		int const entry_name_size = WideCharToMultiByte( CP_UTF8, 0, entry.name, -1, NULL, 0, NULL, NULL );
 		char *const entry_name = new char[entry_name_size];
 		WideCharToMultiByte( CP_UTF8, 0, entry.name, -1, entry_name, entry_name_size, NULL, NULL );
+#else
+		int const entry_name_size = WideCharToMultiByte( CP_UTF8, 0, entry.cFileName, -1, NULL, 0, NULL, NULL );
+		char *const entry_name = new char[entry_name_size];
+		WideCharToMultiByte( CP_UTF8, 0, entry.cFileName, -1, entry_name, entry_name_size, NULL, NULL );
+#endif
 		if( entry_name[0]!='.' || (entry_name[1]!='.' && entry_name[1]!=0) ) {
-			if ((entry.attrib & _A_SUBDIR) && (search_flags&SF_NOADDONS) && !STRICMP(entry_name, "addons")) {
+#ifndef _WIN32_WCE
+			if ((entry.attrib & _A_SUBDIR) && (search_flags&SF_NOADDONS) && !STRICMP(entry_name, "addons"))
+#else
+			if ((entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (search_flags&SF_NOADDONS) && !STRICMP(entry_name, "addons"))
+#endif
+			{
 				continue;
 			}
 
 			if(  filename_matches_pattern(entry_name, lookfor.c_str()) ) {
-				if(only_directories && ((entry.attrib & _A_SUBDIR)==0)) {
+#ifndef _WIN32_WCE
+				if(only_directories && ((entry.attrib & _A_SUBDIR)==0))
+#else
+				if(only_directories && ((entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)==0))
+#endif
+				{
 					delete[] entry_name;
 					continue;
 				}
 				add_entry(path,entry_name,prepend_path);
 			}
-			if( ( (entry.attrib & _A_SUBDIR) ) && ( max_depth > 0 ) ) {
+#ifndef _WIN32_WCE
+			if( ( (entry.attrib & _A_SUBDIR) ) && ( max_depth > 0 ) )
+#else
+			if( ( (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) && ( max_depth > 0 ) )
+#endif
+			{
 				search_path(path + entry_name + '/', name, ext, search_flags, max_depth - 1);
 			}
 		}
 		delete[] entry_name;
-	} while(_wfindnext(hfind, &entry) == 0 );
+	} while(
+#ifndef _WIN32_WCE
+		_wfindnext(hfind, &entry) == 0
+#else
+		FindNextFileW(hfind, &entry) != 0
+#endif
+	);
+#ifndef _WIN32_WCE
 	_findclose(hfind);
+#else
+	FindClose(hfind);
+#endif
 #else
 	assert(path.empty() || path[path.length()-1] == '/');
 	lookfor = path + ".";

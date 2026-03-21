@@ -762,7 +762,7 @@ const char *dr_query_fontpath(int which)
 std::string dr_get_system_font()
 {
 #if COLOUR_DEPTH != 0
-#ifdef WIN32
+#if defined(WIN32) && !defined(_WIN32_WCE)
 #define DEFAULT_FONT "arial.ttf"
 
 	NONCLIENTMETRICSW ncm;
@@ -869,6 +869,8 @@ std::string dr_get_system_font()
 	FcConfigDestroy(config);
 	FcFini();
 	return fontFile;
+#elif defined(_WIN32_WCE)
+	return "wince.ttf";
 #else
 	return FONT_PATH_X "cyr.bdf";
 #endif

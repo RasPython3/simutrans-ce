@@ -97,7 +97,7 @@ else ifeq ($(OSTYPE),mingw)
   else
     SOURCES   += src/WinCE/compatibility.c
     #LDFLAGS   += -pthread
-    CFLAGS    += -Wno-deprecated-copy -DNOMINMAX -DWIN32_LEAN_AND_MEAN -march=armv5tej -mcpu=arm926ej-s -Wno-attributes -DWC_NO_BEST_FIT_CHARS -D_WIN32_WCE=0x0600 -D_MAX_PATH=260 -D_UNICODE -DUNICODE -fvisibility=hidden -fno-pic -fno-semantic-interposition -fno-strict-aliasing
+    CFLAGS    += -Wno-deprecated-copy -DNOMINMAX -DWIN32_LEAN_AND_MEAN -march=armv5tej -mcpu=arm926ej-s -Wno-attributes -DWC_NO_BEST_FIT_CHARS -D_WIN32_WCE=0x0600 -D_MAX_PATH=260 -D_UNICODE -DUNICODE -fvisibility=hidden -fno-pic -fno-strict-aliasing
     LIBS      += -lcoredll -lcoredll6 -lws2 -lmmtimer -lceshell
   endif
 
@@ -143,7 +143,7 @@ ifdef OPTIMISE
     endif
   endif
 else
-  CFLAGS += -O0 -g
+  CFLAGS += -O0
 endif
 
 ifneq ($(LTO),)
