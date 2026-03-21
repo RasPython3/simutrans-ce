@@ -132,7 +132,7 @@ banner_t::banner_t() : gui_frame_t("")
 			add_table(1,0);
 			{
 				add_table(2,0)->set_spacing(scr_size(0,0));{
-					new_component<gui_label_t>("Welcome to Simutrans", SYSCOL_TEXT_TITLE, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
+					new_component<gui_label_t>("Welcome to Simutrans CE", SYSCOL_TEXT_TITLE, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
 					new_component<gui_label_t>(SIM_VERSION_BUILD_STRING, SYSCOL_TEXT_TITLE, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
 				}
 				end_table();
@@ -142,6 +142,7 @@ banner_t::banner_t() : gui_frame_t("")
 					new_component<gui_fill_t>();
 					add_table(1,0);
 						new_component<gui_label_t>("Developed by the Simutrans Team", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
+						new_component<gui_label_t>("Ported by RasPython3", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
 						new_component<gui_label_t>("under the Artistic License", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
 						new_component<gui_label_t>("based on Simutrans 84.22.1", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
 					end_table();
@@ -169,15 +170,13 @@ banner_t::banner_t() : gui_frame_t("")
 		{
 			new_component<gui_fill_t>();
 			add_table(1,0);
-			new_component<gui_label_t>("https://www.simutrans.com", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
-			new_component<gui_label_t>("https://forum.simutrans.com", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
-			new_component<gui_label_t>("https://wiki.simutrans.com", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
+			new_component<gui_label_t>("https://github.com/RasPython3/simutrans-ce", SYSCOL_TEXT_HIGHLIGHT, gui_label_t::left)->set_shadow(SYSCOL_TEXT_SHADOW, true);
 			end_table();
 			new_component<gui_fill_t>();
 		}
 		end_table();
 
-		new_component<gui_fill_t>(false, true);
+    new_component<gui_fill_t>(false, true);
 		new_component<banner_text_t>();
 		new_component<gui_fill_t>(false, true);
 		new_component<gui_label_t>("Version " VERSION_NUMBER, SYSCOL_TEXT_HIGHLIGHT, gui_label_t::right)->set_shadow(SYSCOL_TEXT_SHADOW, true);

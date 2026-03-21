@@ -53,7 +53,7 @@
 
 #define VERSION_DATE __DATE__
 
-#define SAVEGAME_PREFIX  "Simutrans "
+#define SAVEGAME_PREFIX  "Simutrans CE "
 #define XML_SAVEGAME_PREFIX  "<?xml version=\"1.0\"?>"
 
 #define SAVEGAME_VER_NR        "0." QUOTEME(SIM_VERSION_MAJOR) "." QUOTEME(SIM_SAVE_MINOR)

@@ -370,13 +370,15 @@ void print_help()
 	printf(
 		"\n"
 		"---------------------------------------\n"
-		"  Simutrans " VERSION_NUMBER "\n"
+		"  Simutrans CE " VERSION_NUMBER "\n"
 		"  released " VERSION_DATE "\n"
 		"  developed\n"
-		"  by the Simutrans team.\n"
+		"  by the Simutrans team,\n"
+    "  ported\n"
+    "  by RasPython3.\n"
 		"\n"
 		"  Send feedback and questions to:\n"
-		"  <markus@pristovsek.de>\n"
+		"  https://github.com/RasPython3/simutrans-ce/issues\n"
 		"\n"
 		"  Based on Simutrans 0.84.21.2\n"
 		"  by Hansjörg Malthaner et. al.\n"
@@ -445,7 +447,7 @@ void print_help()
 
 void setup_logging(const args_t &args)
 {
-	const char *version = "Simutrans version " VERSION_NUMBER " from " VERSION_DATE
+	const char *version = "Simutrans CE version " VERSION_NUMBER " from " VERSION_DATE
 #ifdef REVISION
 		" r" QUOTEME(REVISION)
 #endif
@@ -1665,7 +1667,7 @@ int simu_main(int argc, char** argv)
 #if COLOUR_DEPTH != 0
 		if(  new_world  ) {
 			dbg->message("simu_main()", "Show banner ... " );
-			ticker::add_msg("Welcome to Simutrans", koord3d::invalid, PLAYER_FLAG | 1);
+			ticker::add_msg("Welcome to Simutrans CE", koord3d::invalid, PLAYER_FLAG | 1);
 			modal_dialogue( new banner_t(), magic_none, welt, never_quit, true );
 			// only show new world, if no other dialogue is active ...
 			new_world = win_get_open_count()==0;

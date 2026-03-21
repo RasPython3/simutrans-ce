@@ -4293,11 +4293,15 @@ name=Return to menu
 note=Button to return to banner menu
 --
 obj=program_text
-name=Welcome to Simutrans
+name=Welcome to Simutrans CE
 note=Text in banner window. It may be followed by a version string (i.e. "Nightly")
 --
 obj=program_text
 name=Developed by the Simutrans Team
+note=Text in banner window
+--
+obj=program_text
+name=Ported by RasPython3
 note=Text in banner window
 --
 obj=program_text
