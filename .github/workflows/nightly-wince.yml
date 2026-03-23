@@ -37,7 +37,7 @@ jobs:
         LDFLAGS="-L$PWD/freetype/lib -L$PWD/libpng/lib -L$PWD/zlib/lib -L$PWD/bzip2/lib" ./configure --host arm-mingw32ce
         echo "MINGW_PACKAGE_PREFIX := arm-mingw32ce" >> config.default
         echo "LDFLAGS += -static -L$PWD/freetype/lib -L$PWD/libpng/lib -L$PWD/zlib/lib -L$PWD/bzip2/lib" >> config.default
-        echo "CFLAGS += -DUINT64_MAX=UINT_MAX -DINT32_MAX=INT_MAX -DINT64_C\(x\)=\(\(int64_t\)x\) -I$PWD/freetype/include/freetype2 -I$PWD/libpng/include -I$PWD/zlib/include -I$PWD/bzip2/include" >> config.default
+        echo "CFLAGS += -DUINT64_MAX=UINT_MAX -DINT32_MAX=INT_MAX -DINT64_C\(x\)=\(\(int64_t\)x\) -I$PWD/freetype/include/freetype2 -I$PWD/libpng/include/libpng12 -I$PWD/zlib/include -I$PWD/bzip2/include" >> config.default
         echo "CC := arm-mingw32ce-gcc" >> config.default
         echo "CXX := arm-mingw32ce-g++" >> config.default
         echo "LD := arm-mingw32ce-ld" >> config.default
