@@ -12,7 +12,8 @@ jobs:
 
     - name: setup_cegcc
       run: |
-        echo
+        wget https://github.com/brain-hackers/cegcc-build/releases/download/2022-10-26-225811/cegcc-x86_64-2022-10-26-225811.zip -O cegcc.zip
+        unzip cegcc.zip -d /opt
 
     - name: download_dependencies
       run: |
