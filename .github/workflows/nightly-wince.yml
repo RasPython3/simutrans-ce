@@ -14,6 +14,7 @@ jobs:
       run: |
         wget https://github.com/brain-hackers/cegcc-build/releases/download/2022-10-26-225811/cegcc-x86_64-2022-10-26-225811.zip -O cegcc.zip
         unzip cegcc.zip -d /opt
+        echo /opt/cegcc/bin >> $GITHUB_PATH
 
     - name: download_dependencies
       run: |
@@ -41,6 +42,7 @@ jobs:
         echo "LD := arm-mingw32ce-ld" >> config.default
         echo "WINDRES := arm-mingw32ce-windres" >> config.default
         echo "STATIC := 0" >> config.default
+
     - name: Build Simutrans
       run: |
         make -j$(nproc)
