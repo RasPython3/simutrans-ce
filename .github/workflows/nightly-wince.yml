@@ -47,3 +47,19 @@ jobs:
     - name: Build Simutrans
       run: |
         make -j$(nproc)
+
+    - name: Distribute
+      run: |
+        cp tools/get_pak.sh tools/get_pak.ps1 simutrans/
+        ./tools/distribute.sh
+        mv simuwin-*.zip simuwce-arm-nightly.zip
+        zip -u simuwce-arm-nightly.zip simutrans/get_pak.sh simutrans/get_pak.ps1
+
+    - name: Update binaries of Nightly Release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: simuwce-arm-nightly.zip
+        asset_name: simuwce-arm-nightly.zip
+        tag: Nightly
+        overwrite: true
