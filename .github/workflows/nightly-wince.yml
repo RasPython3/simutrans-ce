@@ -48,6 +48,13 @@ jobs:
       run: |
         make -j$(nproc)
 
+    - name: Bundle pak64
+      run: |
+        PAKURL=`cat tools/get_pak.sh  | grep -E "^\s*\".*/pak64/" | sed 's/^.*"\(.*\)".*$/\1/g'`
+        wget $PAKURL -O pak.zip
+        unzip pak.zip -d .
+        wget https://sourceforge.net/p/simutrans/code/HEAD/tree/pak64/licence.txt?format=raw -O simutrans/licence-pak64.txt
+
     - name: Distribute
       run: |
         cp tools/get_pak.sh tools/get_pak.ps1 simutrans/
