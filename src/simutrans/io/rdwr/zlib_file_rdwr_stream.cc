@@ -10,7 +10,9 @@
 #include "../../simdebug.h"
 
 #include <cassert>
+#ifndef _WIN32_WCE
 #include <cerrno>
+#endif
 
 
 zlib_file_rdwr_stream_t::zlib_file_rdwr_stream_t(const std::string &filename, bool writing, int compression) :
@@ -121,7 +123,9 @@ void zlib_file_rdwr_stream_t::set_status_from_errno()
 		case EACCES:
 		case ENODEV:
 		case EISDIR:
+#ifndef _WIN32_WCE
 		case ELOOP:
+#endif
 			status = STATUS_ERR_FILE_INACCESSIBLE;
 			break;
 
