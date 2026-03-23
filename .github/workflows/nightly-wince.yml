@@ -20,12 +20,26 @@ jobs:
         wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/libpng-1.2.33/libpng-1.2.33-dev.tar.bz2 -o libpng.tar.bz2
         wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/zlib-1.2.3/zlib-1.2.3-dev.tar.bz2 -o zlib.tar.bz2
         wget https://github.com/RasPython3/bzip2-ce/releases/download/2024-12-06/bzip2.zip -o bzip2.zip
-
-    - name: extract_dependencies
-      run: |
         tar -jxvf freetype.tar.bz2
         tar -jxvf libpng.tar.bz2
         tar -jxvf zlib.tar.bz2
-        unzip bzip2.zip
-        ls 
+        unzip bzip2.zip -d bzip2
+        rm *.bz2 *.zip
+        mv freetype* freetype
+        mv libpng* libpng
+        mv zlib* zlib
 
+    - name: Configure Simutrans Build
+      run: |
+        autoconf
+        LDFLAGS="-L$PWD/freetype/lib -L$PWD/libpng/lib -L$PWD/zlib/lib -L$PWD/bzip2/lib" ./configure --host arm-mingw32ce
+        echo "LDFLAGS= += -static -L$PWD/freetype/lib -L$PWD/libpng/lib -L$PWD/zlib/lib -L$PWD/bzip2/lib" >> config.default
+        echo "CFLAGS= += -I$PWD/freetype/include -I$PWD/libpng/include -I$PWD/zlib/include -I$PWD/bzip2/include" >> config.default
+        echo "CC := arm-mingw32ce-gcc" >> config.default
+        echo "CXX := arm-mingw32ce-gcc" >> config.default
+        echo "LD := arm-mingw32ce-ld" >> config.default
+        echo "WINDRES := arm-mingw32ce-windres" >> config.default
+        echo "STATIC := 0" >> config.default
+    - name: Build Simutrans
+      run: |
+        make -j$(nproc)
