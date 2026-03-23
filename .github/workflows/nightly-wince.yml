@@ -36,7 +36,7 @@ jobs:
         echo "LDFLAGS= += -static -L$PWD/freetype/lib -L$PWD/libpng/lib -L$PWD/zlib/lib -L$PWD/bzip2/lib" >> config.default
         echo "CFLAGS= += -I$PWD/freetype/include -I$PWD/libpng/include -I$PWD/zlib/include -I$PWD/bzip2/include" >> config.default
         echo "CC := arm-mingw32ce-gcc" >> config.default
-        echo "CXX := arm-mingw32ce-gcc" >> config.default
+        echo "CXX := arm-mingw32ce-g++" >> config.default
         echo "LD := arm-mingw32ce-ld" >> config.default
         echo "WINDRES := arm-mingw32ce-windres" >> config.default
         echo "STATIC := 0" >> config.default
