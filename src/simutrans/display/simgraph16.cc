@@ -233,22 +233,12 @@ public:
 
 #define MAX_POLY_CLIPS 6
 
-#if 0
-MSVC_ALIGN(64) struct clipping_info_t {
-	// current clipping rectangle
-	clip_dimension clip_rect;
-	// clipping rectangle to be swapped by display_clip_wh_toggle
-	clip_dimension clip_rect_swap;
-	bool swap_active;
-	// poly clipping variables
-	int number_of_clips;
-	uint8 active_ribi;
-	uint8 clip_ribi[MAX_POLY_CLIPS];
-	clip_line_t poly_clips[MAX_POLY_CLIPS];
-	xrange xranges[MAX_POLY_CLIPS];
-} GCC_ALIGN(64); // aligned to separate cachelines
+#ifndef _WIN32_WCE
+MSVC_ALIGN(64)
 #else
-MSVC_ALIGN(8) struct clipping_info_t {
+MSVC_ALIGN(8)
+#endif
+struct clipping_info_t {
 	// current clipping rectangle
 	clip_dimension clip_rect;
 	// clipping rectangle to be swapped by display_clip_wh_toggle
@@ -260,7 +250,11 @@ MSVC_ALIGN(8) struct clipping_info_t {
 	uint8 clip_ribi[MAX_POLY_CLIPS];
 	clip_line_t poly_clips[MAX_POLY_CLIPS];
 	xrange xranges[MAX_POLY_CLIPS];
-} GCC_ALIGN(8); // aligned to separate cachelines
+}
+#ifndef _WIN32_WCE
+GCC_ALIGN(64); // aligned to separate cachelines
+#else
+GCC_ALIGN(8); // aligned to separate cachelines
 #endif
 
 #ifdef MULTI_THREAD
