@@ -17,10 +17,10 @@ jobs:
 
     - name: download_dependencies
       run: |
-        wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/freetype-2.3.7/freetype-2.3.7-dev.tar.bz2 -o freetype.tar.bz2
-        wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/libpng-1.2.33/libpng-1.2.33-dev.tar.bz2 -o libpng.tar.bz2
-        wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/zlib-1.2.3/zlib-1.2.3-dev.tar.bz2 -o zlib.tar.bz2
-        wget https://github.com/RasPython3/bzip2-ce/releases/download/2024-12-06/bzip2.zip -o bzip2.zip
+        wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/freetype-2.3.7/freetype-2.3.7-dev.tar.bz2 -O freetype.tar.bz2
+        wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/libpng-1.2.33/libpng-1.2.33-dev.tar.bz2 -O libpng.tar.bz2
+        wget https://master.dl.sourceforge.net/project/cegcc/ported%20packages/zlib-1.2.3/zlib-1.2.3-dev.tar.bz2 -O zlib.tar.bz2
+        wget https://github.com/RasPython3/bzip2-ce/releases/download/2024-12-06/bzip2.zip -O bzip2.zip
         tar -jxvf freetype.tar.bz2
         tar -jxvf libpng.tar.bz2
         tar -jxvf zlib.tar.bz2
