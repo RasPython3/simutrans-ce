@@ -62,11 +62,28 @@ jobs:
         mv simuwin-*.zip simuwce-arm-nightly.zip
         zip -u simuwce-arm-nightly.zip simutrans/get_pak.sh simutrans/get_pak.ps1
 
+    - name: Distribute for SHARP Brain
+      run: |
+        cp simuwce-arm-nightly.zip simu-brain-nightly.zip
+        cp sim.exe simutrans/AppMain.exe
+        touch simutrans/index.din
+        zip -d simu-brain-nightly.zip simutrans/simutrans.exe
+        zip -u simu-brain-nightly.zip simutrans/AppMain.exe simutrans/index.din
+
     - name: Update binaries of Nightly Release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: simuwce-arm-nightly.zip
         asset_name: simuwce-arm-nightly.zip
+        tag: Nightly
+        overwrite: true
+
+    - name: Update binaries of Nightly Release for SHARP Brain
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: simu-brain-nightly.zip
+        asset_name: simu-brain-nightly.zip
         tag: Nightly
         overwrite: true
