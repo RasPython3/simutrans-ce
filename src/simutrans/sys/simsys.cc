@@ -870,7 +870,7 @@ std::string dr_get_system_font()
 	FcFini();
 	return fontFile;
 #elif defined(_WIN32_WCE)
-	return "wince.ttf";
+	return FONT_PATH_X "wince.ttf";
 #else
 	return FONT_PATH_X "cyr.bdf";
 #endif
