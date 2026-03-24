@@ -712,11 +712,9 @@ bool font_t::load_from_file(const char *srcfilename)
     ok = load_from_freetype_stream( fp, size, env_t::fontsize );
   }
 
-  if (  ok  ) {
-	  tstrncpy( this->fname, fname, lengthof(this->fname) );
-  }
+  if ( fp != NULL )
+    fclose( fp );
 
-  fclose(fp);
 #endif
 
 #if MSG_LEVEL>=4
