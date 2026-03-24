@@ -585,7 +585,10 @@ void translator::load_language_iso(const string &iso)
 	if (loc != -1) {
 		base = iso.substr(0, loc);
 	}
-	langs[single_instance.lang_count].iso_base = strdup(base.c_str());
+#ifdef IGNORE_LANG_CASE
+  	transform(base.begin(), base.end(), base.begin(), ::tolower);
+#endif
+  	langs[single_instance.lang_count].iso_base = strdup(base.c_str());
 }
 
 
