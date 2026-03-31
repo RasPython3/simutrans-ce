@@ -559,7 +559,7 @@ char const *dr_query_homedir()
 	}
 	strcat(buffer, PATH_SEPARATOR);
 	strcat(buffer, foldername);
-#elif defined _WIN32_WCE
+#elif defined(_WIN32_WCE)
 	WCHAR whomedir[MAX_PATH];
 	GetModuleFileName(NULL, whomedir, MAX_PATH);
 	int index = wcslen(whomedir) - 1;
@@ -575,14 +575,6 @@ char const *dr_query_homedir()
 	if(convert_size == 0) {
 		return NULL;
 	}
-
-	// Append Simutrans folder.
-	char const foldername[] = "simutrans";
-	if(lengthof(buffer) < strlen(buffer) + strlen(foldername) + 2 * strlen(PATH_SEPARATOR) + 1){
-		return NULL;
-	}
-	strcat(buffer, PATH_SEPARATOR);
-	strcat(buffer, foldername);
 #elif defined __APPLE__
 	int maxlen = PATH_MAX + 22;
 	unsigned n = snprintf(buffer, maxlen, "%s/Library/Simutrans", getenv("HOME"));
@@ -648,7 +640,7 @@ char const *dr_query_installdir()
 	}
 	strcat(buffer, PATH_SEPARATOR);
 	strcat(buffer, foldername);
-#elif defined _WIN32_WCE
+#elif defined(_WIN32_WCE)
 	WCHAR whomedir[MAX_PATH];
 	GetModuleFileName(NULL, whomedir, MAX_PATH);
 	int index = wcslen(whomedir) - 1;
@@ -666,13 +658,10 @@ char const *dr_query_installdir()
 	}
 
 	// Append Simutrans folder.
-	char const parentname[] = "simutrans";
 	char const foldername[] = "paksets";
-	if(lengthof(buffer) < strlen(buffer) + strlen(parentname) + strlen(foldername) + 3 * strlen(PATH_SEPARATOR) + 1){
+	if(lengthof(buffer) < strlen(buffer) + strlen(foldername) + 2 * strlen(PATH_SEPARATOR) + 1){
 		return NULL;
 	}
-	strcat(buffer, PATH_SEPARATOR);
-	strcat(buffer, parentname);
 	strcat(buffer, PATH_SEPARATOR);
 	strcat(buffer, foldername);
 #elif defined __APPLE__
