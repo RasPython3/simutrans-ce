@@ -135,7 +135,11 @@ LIBS += -lbz2 -lz -lpng
 
 ifdef OPTIMISE
   ifeq ($(shell expr $(OPTIMISE) \>= 1), 1)
-    CFLAGS += -O3
+    ifdef OPTIMISE_LEVEL
+      CFLAGS += -O$(OPTIMISE_LEVEL)
+    else
+      CFLAGS += -O3
+    endif
     ifeq ($(findstring amiga, $(OSTYPE)),)
       ifneq ($(findstring clang, $(CXX)),)
         CFLAGS += -minline-all-stringops

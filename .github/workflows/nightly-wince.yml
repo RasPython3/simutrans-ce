@@ -43,6 +43,7 @@ jobs:
         echo "LD := arm-mingw32ce-ld" >> config.default
         echo "WINDRES := arm-mingw32ce-windres" >> config.default
         echo "STATIC := 0" >> config.default
+        echo "OPTIMISE_LEVEL := s"
 
     - name: Build Simutrans
       run: |
