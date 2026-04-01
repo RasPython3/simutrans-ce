@@ -51,7 +51,9 @@ extern char **__argv;
 #	define GET_WHEEL_DELTA_WPARAM(wparam) ((short)HIWORD(wparam))
 #endif
 
-
+#ifdef _WIN32_WCE
+# define ChangeDisplaySettings(lpDevMode, dwflags) ChangeDisplaySettingsEx(NULL, (lpDevMode), NULL, (dwflags), NULL)
+#endif
 
 /*
  * The class name used to configure the main window.
@@ -171,9 +173,7 @@ static void create_window(DWORD const ex_style, DWORD const style, int const x, 
 	SetTimer( hwnd, 0, 1111, NULL ); // HACK: so windows thinks we are not dead when processing a timer every 1111 ms ...
 }
 
-#ifndef _WIN32_WCE
 static DEVMODE settings;
-#endif
 
 
 // open the window
@@ -187,13 +187,10 @@ int dr_os_open(const scr_size window_size, sint16 fs)
 	InitializeCriticalSection( &redraw_underway );
 	hFlushThread = CreateThread( NULL, 0, dr_flush_screen, 0, CREATE_SUSPENDED, NULL );
 #endif
-#ifndef _WIN32_WCE
 	MEMZERO(settings);
-#endif
 
 	// fake fullscreen
 	if (fullscreen) {
-#ifndef _WIN32_WCE
 		// try to force display mode and size
 		settings.dmSize = sizeof(settings);
 		settings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
@@ -216,9 +213,6 @@ int dr_os_open(const scr_size window_size, sint16 fs)
 		else {
 			ChangeDisplaySettings(&settings, CDS_FULLSCREEN);
 		}
-#else
-		fullscreen = WINDOWED;
-#endif
 	}
 	if(  fullscreen  ) {
 		create_window(WS_EX_TOPMOST, WS_POPUP, 0, 0, MaxSize.right, MaxSize.bottom);
@@ -278,11 +272,9 @@ void dr_os_close()
 	AllDibData = NULL;
 	free(AllDib);
 	AllDib = NULL;
-#ifndef _WIN32_WCE
 	if(  fullscreen == FULLSCREEN ) {
 		ChangeDisplaySettings(NULL, 0);
 	}
-#endif
 }
 
 
@@ -536,11 +528,9 @@ LRESULT WINAPI WindowProc(HWND this_hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 					// no updating while deleting a window please ...
 					EnterCriticalSection( &redraw_underway );
 #endif
-#ifndef _WIN32_WCE
 					// try to force display mode and size
 					// should be always successful, since it worked as least once ...
 					ChangeDisplaySettings(&settings, CDS_FULLSCREEN);
-#endif
 					is_not_top = false;
 
 					// must reshow window, otherwise startbar will be topmost ...
@@ -553,13 +543,13 @@ LRESULT WINAPI WindowProc(HWND this_hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 					return true;
 				}
 				else if(LOWORD(wParam)==WA_INACTIVE  &&  !is_not_top) {
-#ifndef _WIN32_WCE
 					// restore default
+#ifndef _WIN32_WCE
 					CloseWindow( hwnd );
-					ChangeDisplaySettings( NULL, 0 );
 #else
 					ShowWindow( hwnd, SW_MINIMIZE ); // FIXME: does this work well??
 #endif
+					ChangeDisplaySettings( NULL, 0 );
 					is_not_top = true;
 				}
 
