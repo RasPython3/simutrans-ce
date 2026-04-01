@@ -553,6 +553,85 @@ wince_wfopen(const WCHAR *filename, const WCHAR *Mode)
     return fp;
 }
 
+static int
+check_access_mode(int mode)
+{
+    switch (mode) {
+        case F_OK:
+        case R_OK:
+        case W_OK:
+        case X_OK:
+            break;
+        default:
+            return 0;
+    }
+
+    return 1;
+}
+
+/* Local version of _waccess() that handles relative paths */
+int
+wince_waccess(const WCHAR *path, int mode)
+{
+    struct wince__stat st;
+    WCHAR abs_path[MAX_PATH + 1];
+
+    if (!check_access_mode(mode)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    wince_absolute_path_wide(path, abs_path, sizeof(abs_path) / sizeof(abs_path[0]));
+
+    if (_wstat(abs_path, &st)) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    if (st.st_mode & S_IFDIR)
+        return 0;
+
+    if (mode & W_OK) {
+        if (st.st_mode & S_IWRITE)
+            return 0;
+        errno = EACCES;
+        return -1;
+    }
+
+    return 0;
+}
+
+int
+wince_access(const char *path, int mode)
+{
+    struct wince__stat st;
+    WCHAR abs_path[MAX_PATH + 1];
+
+    if (!check_access_mode(mode)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    wince_absolute_path_to_wide(path, abs_path, sizeof(abs_path) / sizeof(abs_path[0]));
+
+    if (_wstat(abs_path, &st)) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    if (st.st_mode & S_IFDIR)
+        return 0;
+
+    if (mode & W_OK) {
+        if (st.st_mode & S_IWRITE)
+            return 0;
+        errno = EACCES;
+        return -1;
+    }
+
+    return 0;
+}
+
 DWORD
 GetCurrentDirectoryW(DWORD numbuf, wchar_t *buffer)
 {
