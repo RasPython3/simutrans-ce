@@ -75,7 +75,7 @@ jobs:
           sed -E 's/^(saveformat\s*=\s*).*$/\1xml/g' |
           sed -E 's/^(autosaveformat\s*=\s*).*$/\1binary/g' > simutrans/config/simuconf.tab
         zip -d simu-brain-nightly.zip simutrans/simutrans.exe
-        zip -u simu-brain-nightly.zip simutrans/AppMain.exe simutrans/index.din simutrans/config/simconf.tab
+        zip -u simu-brain-nightly.zip simutrans/AppMain.exe simutrans/index.din simutrans/config/simuconf.tab
 
     - name: Update binaries of Nightly Release
       uses: svenstaro/upload-release-action@v2
