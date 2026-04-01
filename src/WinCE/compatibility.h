@@ -197,6 +197,12 @@ FILE * wince_wfopen(const wchar_t *filename, const wchar_t *mode);
 #define fopen wince_fopen
 #define _wfopen wince_wfopen
 
+int wince_access(const char *path, int mode);
+int wince_waccess(const wchar_t *path, int mode);
+#define _access wince_access
+#define _waccess wince_waccess
+#define access _access
+
 DWORD GetCurrentDirectoryW(DWORD, wchar_t *);
 BOOL SetCurrentDirectoryW(const WCHAR *);
 DWORD GetFullPathNameW(const wchar_t *, DWORD, wchar_t *, wchar_t **);
