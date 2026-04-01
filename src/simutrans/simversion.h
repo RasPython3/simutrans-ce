@@ -54,7 +54,7 @@
 
 #define VERSION_DATE __DATE__
 
-#define SAVEGAME_PREFIX  "Simutrans CE "
+#define SAVEGAME_PREFIX  "Simutrans "
 #define XML_SAVEGAME_PREFIX  "<?xml version=\"1.0\"?>"
 
 #define SAVEGAME_VER_NR        "0." QUOTEME(SIM_VERSION_MAJOR) "." QUOTEME(SIM_SAVE_MINOR)
@@ -68,7 +68,13 @@
 #	define SIM_TITLE_REVISION_STRING
 #endif
 
-#	define SIM_TITLE SAVEGAME_PREFIX VERSION_NUMBER SIM_TITLE_REVISION_STRING
+#ifdef GIT_HASH
+#	define SIM_TITLE_HASH_STRING " - hash " QUOTEME(GIT_HASH)
+#else
+#	define SIM_TITLE_HASH_STRING
+#endif
+
+#	define SIM_TITLE SAVEGAME_PREFIX "CE " VERSION_NUMBER SIM_TITLE_REVISION_STRING SIM_TITLE_HASH_STRING
 
 
 /*********************** Settings related to network games ********************/
