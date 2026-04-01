@@ -205,6 +205,13 @@ bool pak_download(vector_tpl<paksetinfo_t*>paks)
 #ifndef _WIN32_WCE
 			sprintf(outfilename, "powershell \"(New-Object System.Net.WebClient).DownloadFile('%s', 'temp.zip')\"", pi->url);
 			system(outfilename);
+#else
+			// nothing to do, we need to implement original https support or use third-party library.
+			dbg->warning("pak_download()", "Cannot download %s because of lack of HTTPS support", pi->url);
+			j += 2;
+			ls.set_progress(j);
+			all_good = false;
+continue;
 #endif
 #else
 			// use
