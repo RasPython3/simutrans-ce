@@ -4667,7 +4667,11 @@ bool display_snapshot( const scr_rect &area )
 
 	// find the first not used screenshot image
 	do {
+#ifndef SCREENSHOT_BMP
 		sprintf(filename, SCREENSHOT_PATH_X "simscr%02d.png", number++);
+#else
+		sprintf(filename, SCREENSHOT_PATH_X "simscr%02d.bmp", number++);
+#endif
 	} while (access(filename, W_OK) != -1);
 
 	// now save the screenshot
@@ -4688,5 +4692,9 @@ bool display_snapshot( const scr_rect &area )
 		}
 	}
 
+#ifndef SCREENSHOT_BMP
 	return img.write_png(filename);
+#else
+	return img.write_bmp(filename);
+#endif
 }
