@@ -92,7 +92,11 @@ bool nwc_gameinfo_t::execute(karte_t *welt)
 		// init the rest of the packet
 		SOCKET s = packet->get_sender();
 		loadsave_t fd;
+#if 0
 		if(  fd.wr_open( "serverinfo.sve", loadsave_t::xml_bzip2, 0, "info", SERVER_SAVEGAME_VER_NR ) == loadsave_t::FILE_STATUS_OK  ) {
+#else
+		if(  fd.wr_open( "serverinfo.sve", loadsave_t::save_mode, 0, "info", SERVER_SAVEGAME_VER_NR ) == loadsave_t::FILE_STATUS_OK  ) {
+#endif
 			gameinfo_t gi(welt);
 			gi.rdwr( &fd );
 			fd.close();
