@@ -62,7 +62,7 @@ jobs:
         cp tools/get_pak.sh tools/get_pak.ps1 simutrans/
         ./tools/distribute.sh -no-rev
         mv simuwin-*.zip simuwce-arm-nightly.zip
-        zip -u simuwce-arm-nightly.zip simutrans/get_pak.sh simutrans/get_pak.ps1
+        zip -u simuwce-arm-nightly.zip simutrans/get_pak.sh simutrans/get_pak.ps1 `find simutrans -type f "(" -name "*.bdf" -o -name "*.fnt" ")"`
 
     - name: Distribute for SHARP Brain
       run: |
