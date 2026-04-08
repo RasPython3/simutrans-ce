@@ -421,6 +421,7 @@ int dr_stat(const char *path, struct stat *buf)
 
 static inline bool is_regular_file(FILE *f)
 {
+#ifndef _WIN32_WCE
 	struct stat s;
 #ifdef _WIN32
 	if (_fstat(_fileno(f), (struct _stat*)&s) != 0) {
@@ -433,6 +434,16 @@ static inline bool is_regular_file(FILE *f)
 #endif
 
 	return S_ISREG(s.st_mode);
+#else /* _WIN32_WCE */
+	BY_HANDLE_FILE_INFORMATION data;
+	HANDLE handle = (HANDLE)_fileno(f);
+
+	if (GetFileInformationByHandle(handle, &data) == 0) {
+		return false;
+	}
+
+	return !(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+#endif
 }
 
 
